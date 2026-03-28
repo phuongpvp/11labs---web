@@ -1,6 +1,7 @@
 # Config files with secrets
 api/config.php
 white-label-tts/api/config.php
+backup_git.bat
 
 # Archives
 *.rar
