@@ -1,0 +1,1146 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="icon.png">
+    <title>Tài liệu - 11LABS Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-hover: #7c3aed;
+            --bg: #09090b;
+            --surface: #18181b;
+            --border: #27272a;
+            --text: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --accent: #ec4899;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, #09090b);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("https://www.transparenttextures.com/patterns/carbon-fibre.png");
+            opacity: 0.1;
+            z-index: -1;
+        }
+
+        /* Nav */
+        .slim-nav {
+            width: 100%;
+            padding: 12px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(9, 9, 11, 0.6);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand span {
+            color: var(--primary);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logout-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 14px;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .logout-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        /* Social Icons */
+        .social-icons-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 15px;
+        }
+
+        .social-icon {
+            font-size: 1rem;
+            color: var(--text-muted);
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            text-decoration: none;
+        }
+
+        .social-icon:hover {
+            transform: translateY(-3px);
+            color: white;
+        }
+
+        .social-icon.zalo {
+            color: #0068FF;
+            background: rgba(0, 104, 255, 0.1);
+            border: 1px solid rgba(0, 104, 255, 0.2);
+        }
+
+        .social-icon.zalo:hover {
+            background: #0068FF;
+            border-color: #0068FF;
+        }
+
+        .social-icon.telegram {
+            color: #24A1DE;
+            background: rgba(36, 161, 222, 0.1);
+            border: 1px solid rgba(36, 161, 222, 0.2);
+        }
+
+        .social-icon.telegram:hover {
+            background: #24A1DE;
+            border-color: #24A1DE;
+        }
+
+        .social-icon.facebook {
+            color: #1877F2;
+            background: rgba(24, 119, 242, 0.1);
+            border: 1px solid rgba(24, 119, 242, 0.2);
+        }
+
+        .social-icon.facebook:hover {
+            background: #1877F2;
+            border-color: #1877F2;
+        }
+
+        .social-icon.youtube {
+            color: #FF0000;
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.2);
+        }
+
+        .social-icon.youtube:hover {
+            background: #FF0000;
+            border-color: #FF0000;
+        }
+
+        /* App Body */
+        .app-body {
+            display: flex;
+            min-height: calc(100vh - 55px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            min-width: 240px;
+            background: rgba(0, 0, 0, 0.3);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 12px;
+            gap: 3px;
+            position: sticky;
+            top: 55px;
+            height: calc(100vh - 55px);
+            overflow-y: auto;
+        }
+
+        .sidebar-user {
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+
+        .sidebar-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 8px;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .sidebar-email {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            word-break: break-all;
+            margin-bottom: 6px;
+        }
+
+        .voice-tag {
+            font-size: 0.7rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--text-muted);
+        }
+
+        .sidebar-section-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 10px 12px 5px;
+        }
+
+        .sidebar-nav-item {
+            padding: 9px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+        }
+
+        .sidebar-nav-item.active {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .sidebar-nav-item i {
+            width: 18px;
+            text-align: center;
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 8px 0;
+        }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+
+        .quota-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .quota-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            transition: width 0.5s;
+        }
+
+        .upgrade-btn {
+            width: 100%;
+            margin-top: 10px;
+            font-size: 0.8rem !important;
+            padding: 8px !important;
+            border-radius: 8px !important;
+            justify-content: center;
+        }
+
+        .convert-btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border: none;
+            border-radius: 100px;
+            color: white;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 1rem;
+        }
+
+        .convert-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Main */
+        .main-area {
+            flex: 1;
+            padding: 30px;
+            max-width: 1200px;
+        }
+
+        .header-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(to bottom right, #fff, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Filter Chips */
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        .filter-chip {
+            padding: 6px 16px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .filter-chip:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .filter-chip.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Article Grid */
+        .docs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .doc-card {
+            background: rgba(24, 24, 27, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .doc-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(139, 92, 246, 0.4);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .doc-thumb {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, #1e1b4b, #312e81);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .doc-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .doc-thumb-placeholder {
+            font-size: 3rem;
+            opacity: 0.3;
+        }
+
+        .doc-category-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            color: var(--primary);
+            text-transform: uppercase;
+        }
+
+        .doc-lock-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f59e0b;
+            font-size: 0.8rem;
+        }
+
+        .doc-body {
+            padding: 18px;
+        }
+
+        .doc-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .doc-summary {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .doc-date {
+            margin-top: 12px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            opacity: 0.7;
+        }
+
+        /* Article Detail */
+        .article-view {
+            display: none;
+        }
+
+        .article-view.active {
+            display: block;
+        }
+
+        .list-view.hidden {
+            display: none;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 25px;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .article-header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .article-header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1.3;
+            margin-bottom: 12px;
+        }
+
+        .article-meta {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .article-meta-badge {
+            padding: 3px 10px;
+            border-radius: 6px;
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--primary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+        }
+
+        .article-content {
+            line-height: 1.8;
+            font-size: 1rem;
+            color: rgba(244, 244, 245, 0.9);
+        }
+
+        .article-content h1,
+        .article-content h2,
+        .article-content h3 {
+            margin: 25px 0 12px;
+            color: white;
+        }
+
+        .article-content h2 {
+            font-size: 1.4rem;
+        }
+
+        .article-content h3 {
+            font-size: 1.15rem;
+        }
+
+        .article-content p {
+            margin-bottom: 14px;
+        }
+
+        .article-content ul,
+        .article-content ol {
+            margin: 10px 0 14px 20px;
+        }
+
+        .article-content li {
+            margin-bottom: 6px;
+        }
+
+        .article-content img {
+            max-width: 100%;
+            border-radius: 12px;
+            margin: 15px 0;
+        }
+
+        .article-content blockquote {
+            border-left: 3px solid var(--primary);
+            padding: 12px 20px;
+            margin: 15px 0;
+            background: rgba(139, 92, 246, 0.05);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+        }
+
+        .article-content pre {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-size: 0.9rem;
+        }
+
+        .article-content code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .article-content a {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        /* Locked Overlay */
+        .locked-overlay {
+            position: relative;
+            margin-top: 20px;
+        }
+
+        .locked-content {
+            filter: blur(6px);
+            user-select: none;
+            pointer-events: none;
+            max-height: 200px;
+            overflow: hidden;
+        }
+
+        .locked-cta {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(to bottom, transparent 0%, rgba(9, 9, 11, 0.95) 60%);
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .locked-cta i {
+            font-size: 2.5rem;
+            color: #f59e0b;
+            margin-bottom: 15px;
+        }
+
+        .locked-cta h3 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+        }
+
+        .locked-cta p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .locked-cta .upgrade-action {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            border: none;
+            border-radius: 100px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: 0.3s;
+        }
+
+        .locked-cta .upgrade-action:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            opacity: 0.3;
+            margin-bottom: 15px;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+        }
+
+        /* Loading */
+        .loading-spinner {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-muted);
+        }
+
+        .loading-spinner i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 1000px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main-area {
+                padding: 15px;
+            }
+
+            .docs-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Shaking Gift Icon */
+        .gift-icon-link {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            animation: shakeGift 2s ease-in-out infinite;
+            text-decoration: none;
+            margin-right: 5px;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .gift-icon-link:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
+        }
+
+        @keyframes shakeGift {
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            10% {
+                transform: rotate(-12deg);
+            }
+
+            20% {
+                transform: rotate(12deg);
+            }
+
+            30% {
+                transform: rotate(-8deg);
+            }
+
+            40% {
+                transform: rotate(8deg);
+            }
+
+            50% {
+                transform: rotate(0deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="slim-nav">
+        <div class="brand"><i class="fa-solid fa-wave-square"></i> 11<span>LABS</span></div>
+        <div class="user-info">
+            <div class="social-icons-container" id="headerSocialIcons"></div>
+
+            <a href="affiliate" class="gift-icon-link" title="Giới thiệu bạn bè - Nhận thưởng">
+                <i class="fa-solid fa-gift"></i>
+            </a>
+
+            <button onclick="window.location.href='profile'" class="logout-btn"
+                style="border: none; background: rgba(255,255,255,0.1); margin-right: 5px;">
+                <i class="fa-solid fa-user"></i> <span class="btn-text">Hồ sơ</span>
+            </button>
+            <button onclick="logout()" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> <span
+                    class="btn-text">Đăng xuất</span></button>
+        </div>
+    </nav>
+
+    <div class="app-body">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-user">
+                <div class="sidebar-avatar" id="sidebarAvatar">?</div>
+                <div class="sidebar-email" id="sidebarEmail">Loading...</div>
+                <span id="userPlanBadge" class="voice-tag" style="background: var(--primary); color: white;">-</span>
+            </div>
+            <div class="sidebar-section-label">Công cụ giọng nói</div>
+            <div class="sidebar-nav-item" onclick="window.location.href='customer'">
+                <i class="fa-solid fa-microphone-lines"></i> Văn bản thành giọng nói
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='customer'">
+                <i class="fa-regular fa-clone"></i> Nhân bản giọng nói
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='conversation'">
+                <i class="fa-solid fa-comments"></i> Hội thoại (Mới)
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='dubbing'">
+                <i class="fa-solid fa-language"></i> Lồng tiếng tự động
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='voice_changer'">
+                <i class="fa-solid fa-water"></i> Thay đổi giọng nói
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='isolator'">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Tách giọng nói (Mới)
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='speech-to-text'">
+                <i class="fa-solid fa-file-lines"></i> Giọng nói → Văn bản (Mới)
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='music'">
+                <i class="fa-solid fa-music"></i> Sáng tác Nhạc AI (Mới)
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='sound-effect'">
+                <i class="fa-solid fa-volume-high"></i> Hiệu ứng âm thanh
+            </div>
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-section-label">Tài nguyên</div>
+            <div class="sidebar-nav-item active">
+                <i class="fa-solid fa-book"></i> Tài liệu
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='api-docs'">
+                <i class="fa-solid fa-code"></i> Tài liệu API
+            </div>
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-section-label">Tài khoản</div>
+            <div class="sidebar-nav-item" onclick="window.location.href='customer?action=upgrade'">
+                <i class="fa-solid fa-crown" style="color:#f59e0b;"></i> Nâng cấp gói
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='customer?action=jobs'">
+                <i class="fa-solid fa-list-check"></i> Danh sách tác vụ
+            </div>
+            <div class="sidebar-bottom">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-size:0.75rem; font-weight:600; color:var(--text-muted);">TÍN DỤNG</span>
+                    <button onclick="doRefresh()" id="btnRefresh" title="Cập nhật"
+                        style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.85rem;"><i
+                            class="fa-solid fa-rotate" id="refreshIcon"></i></button>
+                </div>
+                <div style="font-size:0.8rem; color:var(--text); font-weight:600; margin-bottom:6px;" id="quotaText">Còn
+                    lại: 0 / 0 ký tự</div>
+                <div class="quota-bar">
+                    <div id="quotaFill" class="quota-fill" style="width: 0%;"></div>
+                </div>
+                <div style="font-size:0.72rem; color:var(--text-muted);" id="pointsDisplay">Đang tải...</div>
+                <button onclick="window.location.href='customer?action=upgrade'" class="convert-btn upgrade-btn">
+                    <i class="fa-solid fa-crown"></i> Nâng cấp
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Area -->
+        <main class="main-area">
+            <!-- List View -->
+            <div class="list-view" id="listView">
+                <div style="margin-bottom: 10px;">
+                    <h1 class="header-title"><i class="fa-solid fa-book" style="margin-right: 8px;"></i>Tài liệu</h1>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 5px;">
+                        Hướng dẫn, mẹo và tài liệu hữu ích dành cho bạn
+                    </p>
+                </div>
+
+                <div class="filter-bar" id="filterBar">
+                    <div class="filter-chip active" onclick="filterDocs('')">Tất cả</div>
+                </div>
+
+                <div id="docsGrid" class="docs-grid">
+                    <div class="loading-spinner">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        <p>Đang tải...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Article Detail View -->
+            <div class="article-view" id="articleView">
+                <button class="back-btn" onclick="backToList()">
+                    <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách
+                </button>
+                <div id="articleContent">
+                    <div class="loading-spinner">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        <p>Đang tải bài viết...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_URL = 'api';
+        const token = localStorage.getItem('auth_token');
+        const fmt = n => Number(n).toLocaleString('vi-VN');
+        if (!token) window.location.href = 'customer';
+
+        let userData = null;
+        let allDocs = [];
+        let currentFilter = '';
+
+        init();
+
+        async function init() {
+            updateUserInfo();
+            loadDocs();
+            loadCategories();
+        }
+
+        // === User Info ===
+        async function updateUserInfo() {
+            try {
+                const res = await fetch('api/profile.php', { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    userData = data.user;
+                    const balance = data.user.quota_total - data.user.quota_used;
+                    const percent = Math.min(100, (balance / data.user.quota_total) * 100);
+                    document.getElementById('sidebarEmail').innerText = data.user.email;
+                    document.getElementById('sidebarAvatar').innerText = data.user.email[0].toUpperCase();
+                    document.getElementById('quotaText').innerText = `Còn lại: ${fmt(balance)} / ${fmt(data.user.quota_total)} ký tự`;
+                    document.getElementById('quotaFill').style.width = percent + '%';
+                    if (data.user.expires_at) {
+                        const exp = new Date(data.user.expires_at);
+                        document.getElementById('pointsDisplay').innerText = `Hết hạn: ${exp.getDate()}/${exp.getMonth() + 1}/${exp.getFullYear()}`;
+                    } else { document.getElementById('pointsDisplay').innerText = ''; }
+                    const planVal = (data.user.custom_plan_name || data.user.plan_name || data.user.plan || 'Free').toLowerCase();
+                    const badgeEl = document.getElementById('userPlanBadge');
+                    badgeEl.innerText = planVal.toUpperCase();
+                    if (planVal.includes('supper')) { badgeEl.style.background = 'linear-gradient(135deg, #d4af37, #f3e5ab)'; badgeEl.style.color = '#000'; }
+                    else if (planVal === 'basic') { badgeEl.style.background = '#3b82f6'; }
+                    else { badgeEl.style.background = 'var(--primary)'; }
+                    loadSocialSettings();
+                }
+            } catch (e) { }
+        }
+
+        function doRefresh() {
+            const icon = document.getElementById('refreshIcon');
+            icon.style.transition = 'transform 0.5s';
+            icon.style.transform = 'rotate(360deg)';
+            setTimeout(() => { icon.style.transition = ''; icon.style.transform = ''; }, 600);
+            updateUserInfo();
+        }
+
+        async function loadSocialSettings() {
+            try {
+                const res = await fetch('api/social_settings.php');
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const container = document.getElementById('headerSocialIcons');
+                    if (!container) return;
+                    container.innerHTML = '';
+                    const s = data.settings;
+                    if (s.zalo) addSocialIcon(container, 'zalo', 'Zalo', s.zalo);
+                    if (s.telegram) addSocialIcon(container, 'telegram', 'Telegram', s.telegram);
+                    if (s.facebook) addSocialIcon(container, 'facebook', 'Facebook', s.facebook);
+                    if (s.youtube) addSocialIcon(container, 'youtube', 'YouTube', s.youtube);
+                }
+            } catch (e) { }
+        }
+
+        function addSocialIcon(container, type, title, url) {
+            const iconMap = { zalo: 'fa-solid fa-z', telegram: 'fa-brands fa-telegram', facebook: 'fa-brands fa-facebook-f', youtube: 'fa-brands fa-youtube' };
+            const a = document.createElement('a');
+            a.href = url; a.target = '_blank'; a.title = title;
+            a.className = `social-icon ${type}`;
+            a.innerHTML = `<i class="${iconMap[type]}"></i>`;
+            container.appendChild(a);
+        }
+
+        function logout() { localStorage.removeItem('auth_token'); window.location.href = 'login'; }
+
+        // === Docs ===
+        async function loadDocs() {
+            try {
+                const url = currentFilter
+                    ? `${API_URL}/docs.php?action=list&category=${encodeURIComponent(currentFilter)}`
+                    : `${API_URL}/docs.php?action=list`;
+                const res = await fetch(url);
+                const data = await res.json();
+                allDocs = data.documents || [];
+                renderDocs();
+            } catch (e) {
+                document.getElementById('docsGrid').innerHTML = `<div class="empty-state">
+                    <i class="fa-solid fa-exclamation-triangle"></i>
+                    <p>Lỗi tải tài liệu</p>
+                </div>`;
+            }
+        }
+
+        async function loadCategories() {
+            try {
+                const res = await fetch(`${API_URL}/docs.php?action=categories`);
+                const data = await res.json();
+                const bar = document.getElementById('filterBar');
+                const categoryLabels = {
+                    guide: '📖 Hướng dẫn',
+                    tips: '💡 Mẹo hay',
+                    template: '📝 Mẫu kịch bản',
+                    news: '📢 Tin tức',
+                };
+                (data.categories || []).forEach(cat => {
+                    const chip = document.createElement('div');
+                    chip.className = 'filter-chip';
+                    chip.textContent = categoryLabels[cat] || cat;
+                    chip.onclick = () => filterDocs(cat);
+                    bar.appendChild(chip);
+                });
+            } catch (e) { }
+        }
+
+        function filterDocs(category) {
+            currentFilter = category;
+            document.querySelectorAll('.filter-chip').forEach((c, i) => {
+                c.classList.toggle('active', (category === '' && i === 0) || c.textContent.toLowerCase().includes(category));
+            });
+            loadDocs();
+        }
+
+        function renderDocs() {
+            const grid = document.getElementById('docsGrid');
+
+            if (allDocs.length === 0) {
+                grid.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;">
+                    <i class="fa-solid fa-book-open"></i>
+                    <p>Chưa có tài liệu nào</p>
+                </div>`;
+                return;
+            }
+
+            const userPlan = getUserPlanLevel();
+
+            grid.innerHTML = allDocs.map(doc => {
+                const planLevel = { free: 0, basic: 1, pro: 2, supper: 3 };
+                const required = planLevel[doc.min_plan] || 2;
+                const isLocked = userPlan < required;
+                const dateStr = new Date(doc.created_at).toLocaleDateString('vi-VN');
+                const categoryLabels = { guide: '📖 Hướng dẫn', tips: '💡 Mẹo', template: '📝 Mẫu', news: '📢 Tin tức' };
+
+                return `<div class="doc-card" onclick="viewArticle(${doc.id})">
+                    <div class="doc-thumb">
+                        ${doc.thumbnail
+                        ? `<img src="${doc.thumbnail}" alt="${doc.title}" onerror="this.parentElement.innerHTML='<div class=doc-thumb-placeholder><i class=fa-solid fa-book></i></div>'">`
+                        : '<div class="doc-thumb-placeholder"><i class="fa-solid fa-book"></i></div>'}
+                        <div class="doc-category-badge">${categoryLabels[doc.category] || doc.category}</div>
+                        ${isLocked ? '<div class="doc-lock-badge"><i class="fa-solid fa-lock"></i></div>' : ''}
+                    </div>
+                    <div class="doc-body">
+                        <div class="doc-title">${doc.title}</div>
+                        <div class="doc-summary">${doc.summary || ''}</div>
+                        <div class="doc-date"><i class="fa-regular fa-calendar"></i> ${dateStr}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function getUserPlanLevel() {
+            if (!userData) return 0;
+            const plan = (userData.custom_plan_name || userData.plan_name || userData.plan || 'free').toLowerCase();
+            if (plan.includes('supper')) return 3;
+            if (plan.includes('pro')) return 2;
+            if (plan.includes('basic')) return 1;
+            return 0;
+        }
+
+        async function viewArticle(id) {
+            document.getElementById('listView').classList.add('hidden');
+            const av = document.getElementById('articleView');
+            av.classList.add('active');
+            document.getElementById('articleContent').innerHTML = `<div class="loading-spinner">
+                <i class="fa-solid fa-spinner fa-spin"></i><p>Đang tải bài viết...</p>
+            </div>`;
+
+            try {
+                const res = await fetch(`${API_URL}/docs.php?action=detail&id=${id}&token=${token}`);
+                const data = await res.json();
+
+                if (data.error) {
+                    document.getElementById('articleContent').innerHTML = `<div class="empty-state">
+                        <i class="fa-solid fa-exclamation-triangle"></i><p>${data.error}</p>
+                    </div>`;
+                    return;
+                }
+
+                const doc = data.document;
+                const dateStr = new Date(doc.created_at).toLocaleDateString('vi-VN');
+                const categoryLabels = { guide: '📖 Hướng dẫn', tips: '💡 Mẹo hay', template: '📝 Mẫu kịch bản', news: '📢 Tin tức' };
+
+                let html = `
+                    <div class="article-header">
+                        <h1>${doc.title}</h1>
+                        <div class="article-meta">
+                            <span class="article-meta-badge">${categoryLabels[doc.category] || doc.category}</span>
+                            <span><i class="fa-regular fa-calendar"></i> ${dateStr}</span>
+                        </div>
+                    </div>`;
+
+                if (doc.locked) {
+                    html += `
+                        <div class="article-content" style="margin-bottom: 0;">
+                            <p>${doc.content}</p>
+                        </div>
+                        <div class="locked-overlay">
+                            <div class="locked-content">
+                                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+                                <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</p>
+                                <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.</p>
+                            </div>
+                            <div class="locked-cta">
+                                <i class="fa-solid fa-lock"></i>
+                                <h3>Nội dung dành cho gói ${doc.min_plan.toUpperCase()}</h3>
+                                <p>Nâng cấp tài khoản để đọc toàn bộ bài viết này và nhiều tài liệu độc quyền khác.</p>
+                                <button class="upgrade-action" onclick="window.location.href='customer?action=upgrade'">
+                                    <i class="fa-solid fa-crown"></i> Nâng cấp ngay
+                                </button>
+                            </div>
+                        </div>`;
+                } else {
+                    html += `<div class="article-content">${doc.content}</div>`;
+                }
+
+                document.getElementById('articleContent').innerHTML = html;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            } catch (e) {
+                document.getElementById('articleContent').innerHTML = `<div class="empty-state">
+                    <i class="fa-solid fa-exclamation-triangle"></i><p>Lỗi kết nối</p>
+                </div>`;
+            }
+        }
+
+        function backToList() {
+            document.getElementById('articleView').classList.remove('active');
+            document.getElementById('listView').classList.remove('hidden');
+        }
+    </script>
+</body>
+
+</html>

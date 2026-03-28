@@ -1,0 +1,10 @@
+# Clean URLs - Bỏ đuôi .html
+RewriteEngine On
+
+# Không rewrite file thực tế hoặc thư mục
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Thêm .html nếu file tồn tại
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^([^/]+)$ $1.html [L]

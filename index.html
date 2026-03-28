@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="icon.png">
+    <meta name="description"
+        content="11LABS - Nền tảng chuyển đổi văn bản thành giọng nói AI tự nhiên và cảm xúc nhất. Hỗ trợ nhiều ngôn ngữ và hàng ngàn giọng đọc chất lượng cao.">
+
+    <!-- Open Graph / Facebook -->
+    <meta name="title" content="11LABS - Chuyển văn bản thành giọng nói AI cảm xúc nhất">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://11labs.id.vn/">
+    <meta property="og:title" content="11LABS - Chuyển văn bản thành giọng nói AI cảm xúc nhất">
+    <meta property="og:description"
+        content="Nền tảng tạo giọng nói AI hàng đầu với hàng ngàn giọng đọc tự nhiên. Chuyển đổi văn bản thành âm thanh chuyên nghiệp chỉ trong vài giây.">
+    <meta property="og:image" content="https://11labs.id.vn/preview.png?v=2">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://11labs.id.vn/">
+    <meta property="twitter:title" content="11LABS - Chuyển văn bản thành giọng nói AI cảm xúc nhất">
+    <meta property="twitter:description"
+        content="Nền tảng tạo giọng nói AI hàng đầu với hàng ngàn giọng đọc tự nhiên. Chuyển đổi văn bản thành âm thanh chuyên nghiệp chỉ trong vài giây.">
+    <meta property="twitter:image" content="https://11labs.id.vn/preview.png?v=2">
+    <title>11LABS - Chuyển văn bản thành giọng nói AI cảm xúc nhất</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --secondary: #ec4899;
+            --accent: #06b6d4;
+            --bg: #09090b;
+            --surface: #18181b;
+            --border: #27272a;
+            --text: #f4f4f5;
+            --text-muted: #a1a1aa;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Navbar */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(9, 9, 11, 0.8);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand i {
+            color: var(--primary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: white;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border-radius: 100px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .btn-outline {
+            border: 1px solid var(--border);
+            color: white;
+            background: transparent;
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 120px 20px 80px;
+            background: radial-gradient(circle at center, #1e1b4b 0%, var(--bg) 70%);
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("https://www.transparenttextures.com/patterns/carbon-fibre.png");
+            opacity: 0.1;
+            z-index: 1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 900px;
+        }
+
+        .badge {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--primary);
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            font-weight: 800;
+        }
+
+        .gradient-text {
+            background: linear-gradient(to right, #fff, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-btns {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .hero-visual {
+            margin-top: 60px;
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 1000px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Features */
+        .features {
+            padding: 100px 5%;
+            background: var(--surface);
+            position: relative;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--primary);
+        }
+
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Audio Samples */
+        .samples {
+            padding: 100px 5%;
+            background: var(--bg);
+        }
+
+        .sample-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .sample-card {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .voice-meta {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .voice-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+        }
+
+        /* Pricing */
+        .pricing {
+            padding: 100px 5%;
+            background: var(--surface);
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+            align-items: stretch;
+        }
+
+        .price-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px 20px;
+            width: auto;
+            text-align: center;
+            position: relative;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Responsive Breakpoints for Pricing */
+        @media (max-width: 1200px) {
+            .pricing-grid {
+                grid-template-columns: repeat(2, 1fr);
+                max-width: 800px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .price-card.popular {
+            border-color: var(--primary);
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.15);
+        }
+
+        .price-card.popular::after {
+            content: 'Phổ biến nhất';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .price {
+            font-size: 3rem;
+            font-weight: 700;
+            margin: 20px 0;
+            color: white;
+        }
+
+        .price span {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .feature-list {
+            list-style: none;
+            text-align: left;
+            margin: 30px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-muted);
+        }
+
+        .feature-list li i {
+            color: var(--success, #22c55e);
+        }
+
+        /* CTA */
+        .cta {
+            padding: 100px 20px;
+            text-align: center;
+            background: linear-gradient(to bottom, var(--bg), #1e1b4b);
+        }
+
+        .cta h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 50px 5%;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <div class="brand">
+            <i class="fa-solid fa-wave-square"></i> 11LABS
+        </div>
+        <div class="nav-links">
+            <a href="#features">Tính năng</a>
+            <a href="#samples">Giọng mẫu</a>
+            <a href="#pricing">Bảng giá</a>
+        </div>
+        <div class="nav-actions" id="navActions">
+            <a href="login" class="btn btn-outline" id="loginBtn">Đăng nhập</a>
+            <a href="login" class="btn btn-primary" id="ctaBtn">Dùng thử ngay</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <span class="badge">✨ Công nghệ AI thế hệ mới</span>
+            <h1>Biến văn bản thành <br><span class="gradient-text">Giọng nói cảm xúc</span></h1>
+            <p>Tạo Voice-off chuyên nghiệp cho Video Youtube, Tiktok, Podcast chỉ trong vài giây. Hỗ trợ Tiếng Việt cực
+                chuẩn và 29 ngôn ngữ khác.</p>
+            <div class="hero-btns">
+                <a href="login" class="btn btn-primary" style="padding: 15px 40px; font-size: 1.1rem;"><i
+                        class="fa-solid fa-wand-magic-sparkles"></i> Bắt đầu miễn phí</a>
+                <a href="#samples" class="btn btn-outline" style="padding: 15px 40px; font-size: 1.1rem;"><i
+                        class="fa-solid fa-play"></i> Nghe thử giọng</a>
+            </div>
+        </div>
+
+        <div class="hero-visual">
+            <div
+                style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
+                <div style="width: 12px; height: 12px; background: #ef4444; border-radius: 50%;"></div>
+                <div style="width: 12px; height: 12px; background: #eab308; border-radius: 50%;"></div>
+                <div style="width: 12px; height: 12px; background: #22c55e; border-radius: 50%;"></div>
+                <div style="flex: 1; text-align: center; color: var(--text-muted); font-size: 0.8rem;">11LABS Studio
+                    Preview</div>
+            </div>
+            <div style="display: flex; gap: 20px; align-items: flex-start;">
+                <div style="flex: 1; text-align: left;">
+                    <div
+                        style="background: rgba(255,255,255,0.05); height: 10px; border-radius: 5px; width: 80%; margin-bottom: 10px;">
+                    </div>
+                    <div
+                        style="background: rgba(255,255,255,0.05); height: 10px; border-radius: 5px; width: 60%; margin-bottom: 10px;">
+                    </div>
+                    <div
+                        style="background: rgba(255,255,255,0.05); height: 10px; border-radius: 5px; width: 90%; margin-bottom: 20px;">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <div
+                            style="width: 40px; height: 40px; background: rgba(139, 92, 246, 0.2); border-radius: 8px;">
+                        </div>
+                        <div style="flex: 1; height: 40px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        </div>
+                    </div>
+                </div>
+                <div
+                    style="width: 200px; height: 150px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px;">
+                    <i class="fa-solid fa-sliders" style="font-size: 2rem; color: var(--text-muted);"></i>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Tùy chỉnh giọng đọc</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="section-header">
+            <h2>Tại sao chọn 11LABS?</h2>
+            <p>Công cụ đắc lực cho mọi nhà sáng tạo nội dung</p>
+        </div>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fa-solid fa-microphone-lines"></i></div>
+                <h3>Giọng đọc tự nhiên</h3>
+                <p>Công nghệ AI tiên tiến giúp tạo ra giọng đọc có cảm xúc, ngắt nghỉ đúng chỗ, không còn khô khan như
+                    chị Google.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fa-solid fa-language"></i></div>
+                <h3>Đa ngôn ngữ</h3>
+                <p>Hỗ trợ Tiếng Việt, Tiếng Anh, Nhật, Hàn... và 29 ngôn ngữ khác với nhiều chất giọng địa phương đa
+                    dạng.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fa-solid fa-bolt"></i></div>
+                <h3>Tốc độ cực nhanh</h3>
+                <p>Xử lý văn bản dài trong tích tắc. Tiết kiệm hàng giờ thu âm và chỉnh sửa audio thủ công.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fa-solid fa-closed-captioning"></i></div>
+                <h3>Tạo phụ đề SRT</h3>
+                <p>Tự động tạo file phụ đề SRT khớp từng giây với file âm thanh. Cực tiện lợi để làm video
+                    Youtube/Tiktok.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fa-solid fa-sliders"></i></div>
+                <h3>Tùy chỉnh sâu</h3>
+                <p>Điều chỉnh độ ổn định, độ sáng tạo của giọng đọc để phù hợp với từng ngữ cảnh: Tin tức, Kể chuyện hay
+                    QC.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fa-solid fa-download"></i></div>
+                <h3>Tải xuống không giới hạn</h3>
+                <p>File MP3 chất lượng cao (128kbps - 44.1kHz). Quyền sở hữu thương mại đầy đủ cho mọi gói cước.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="pricing" class="pricing">
+        <div class="section-header">
+            <h2>Bảng giá linh hoạt</h2>
+            <p>Chọn gói cước phù hợp với nhu cầu của bạn</p>
+        </div>
+        <div class="pricing-grid">
+            <div class="price-card">
+                <h3>Trial</h3>
+                <div class="price">0đ <span>/ 3 ngày</span></div>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-check"></i> 2,000 ký tự miễn phí</li>
+                    <li><i class="fa-solid fa-check"></i> Truy cập TOÀN BỘ giọng đọc</li>
+                    <li><i class="fa-solid fa-check"></i> Tải xuống MP3</li>
+                    <li><i class="fa-solid fa-xmark" style="color: var(--text-muted);"></i> Tạo phụ đề SRT</li>
+                </ul>
+                <a href="login" class="btn btn-outline" style="width: 100%; display: inline-block;">Đăng ký
+                    ngay</a>
+            </div>
+
+            <div class="price-card">
+                <h3>Basic</h3>
+                <div class="price">39k <span>/ 10 ngày</span></div>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-check"></i> 300,000 ký tự / 9999 ngày</li>
+                    <li><i class="fa-solid fa-check"></i> Truy cập TOÀN BỘ giọng đọc</li>
+                    <li><i class="fa-solid fa-check"></i> Tải xuống MP3</li>
+                    <li><i class="fa-solid fa-xmark" style="color: var(--text-muted);"></i> Tạo phụ đề SRT</li>
+                </ul>
+                <a href="login" class="btn btn-outline" style="width: 100%; display: inline-block;">Chọn gói
+                    ngay</a>
+            </div>
+
+            <div class="price-card popular">
+                <h3>Pro</h3>
+                <div class="price">99k <span>/ tháng</span></div>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-check"></i> 1,000,000 ký tự / 9999 ngày</li>
+                    <li><i class="fa-solid fa-check"></i> Truy cập TOÀN BỘ giọng đọc</li>
+                    <li><i class="fa-solid fa-check"></i> Tải xuống MP3</li>
+                    <li><i class="fa-solid fa-check"></i> Tạo phụ đề SRT</li>
+                    <li><i class="fa-solid fa-check"></i> Xử lý ưu tiên tốc độ cao</li>
+                </ul>
+                <a href="login" class="btn btn-primary" style="width: 100%; display: inline-block;">Chọn gói
+                    ngay</a>
+            </div>
+
+            <div class="price-card">
+                <h3>Premium</h3>
+                <div class="price">279k <span>/ tháng</span></div>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-check"></i> 3,000,000 ký tự / 9999 ngày</li>
+                    <li><i class="fa-solid fa-check"></i> Truy cập TOÀN BỘ giọng đọc</li>
+                    <li><i class="fa-solid fa-check"></i> Tải xuống MP3</li>
+                    <li><i class="fa-solid fa-check"></i> Tạo phụ đề SRT</li>
+                    <li><i class="fa-solid fa-check"></i> Xử lý ưu tiên tốc độ cao</li>
+                </ul>
+                <a href="login" class="btn btn-outline" style="width: 100%; display: inline-block;">Chọn gói
+                    ngay</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <h2>Sẵn sàng sáng tạo?</h2>
+        <p style="color: var(--text-muted); margin-bottom: 30px;">Tham gia cùng hàng ngàn nhà sáng tạo nội dung đang sử
+            dụng 11LABS mỗi ngày.</p>
+        <a href="login" class="btn btn-primary" style="padding: 15px 50px; font-size: 1.2rem;">Tạo tài khoản miễn
+            phí</a>
+    </section>
+
+    <script>
+        // Check session and update all login links immediately
+        (function () {
+            function updateUI() {
+                const token = localStorage.getItem('auth_token');
+                if (!token || token === 'undefined') return;
+
+                // Update all links pointing to login.html
+                const loginLinks = document.querySelectorAll('a[href="login"]');
+                loginLinks.forEach(link => {
+                    link.href = 'customer';
+
+                    // Update text based on context
+                    if (link.id === 'loginBtn' || link.innerText.includes('Đăng nhập')) {
+                        link.innerHTML = '<i class="fa-solid fa-user"></i> Trang quản lý';
+                    } else {
+                        link.innerHTML = '<i class="fa-solid fa-rocket"></i> Vào Web Tool ngay';
+                    }
+
+                    // Ensure the button looks active
+                    link.classList.add('btn-primary');
+                    link.classList.remove('btn-outline');
+                });
+
+                // Navbar specific override for best look
+                const navActions = document.getElementById('navActions');
+                if (navActions) {
+                    navActions.innerHTML = `
+                        <a href="customer" class="btn btn-primary"><i class="fa-solid fa-rocket"></i> Vào Web Tool</a>
+                    `;
+                }
+            }
+
+            // Run on load and whenever DOM is ready
+            updateUI();
+            window.addEventListener('DOMContentLoaded', updateUI);
+            // Also run a few times after load just in case of dynamic renders
+            setTimeout(updateUI, 500);
+            setTimeout(updateUI, 1500);
+        })();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1749 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="icon.png">
+    <title>Tách giọng nói AI - 11LABS Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-hover: #7c3aed;
+            --bg: #09090b;
+            --surface: #18181b;
+            --border: #27272a;
+            --text: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --accent: #ec4899;
+            --success: #22c55e;
+            --error: #ef4444;
+            --secondary: #6366f1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, #09090b);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Slim Top Nav (Same as customer.html) */
+        .slim-nav {
+            width: 100%;
+            padding: 10px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(9, 9, 11, 0.5);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #f4f4f5;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: normal;
+        }
+
+        .brand i {
+            color: #f4f4f5;
+            font-size: 1rem;
+            font-weight: 900;
+        }
+
+        .brand span {
+            color: #f4f4f5;
+            font-weight: 400;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .social-icons-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 15px;
+        }
+
+        .social-icon {
+            font-size: 1rem;
+            color: var(--text-muted);
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            text-decoration: none;
+        }
+
+        .social-icon:hover {
+            transform: translateY(-3px);
+            color: white !important;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .social-icon.zalo {
+            color: #0068FF;
+            background: rgba(0, 104, 255, 0.1);
+            border-color: rgba(0, 104, 255, 0.2);
+        }
+
+        .social-icon.zalo:hover {
+            background: #0068FF;
+            border-color: #0068FF;
+        }
+
+        .social-icon.telegram {
+            color: #24A1DE;
+            background: rgba(36, 161, 222, 0.1);
+            border-color: rgba(36, 161, 222, 0.2);
+        }
+
+        .social-icon.telegram:hover {
+            background: #24A1DE;
+            border-color: #24A1DE;
+        }
+
+        .social-icon.facebook {
+            color: #1877F2;
+            background: rgba(24, 119, 242, 0.1);
+            border-color: rgba(24, 119, 242, 0.2);
+        }
+
+        .social-icon.facebook:hover {
+            background: #1877F2;
+            border-color: #1877F2;
+        }
+
+        .social-icon.youtube {
+            color: #FF0000;
+            background: rgba(255, 0, 0, 0.1);
+            border-color: rgba(255, 0, 0, 0.2);
+        }
+
+        .social-icon.youtube:hover {
+            background: #FF0000;
+            border-color: #FF0000;
+        }
+
+        .logout-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 16px;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logout-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        /* Layout Structure */
+        .app-body {
+            display: flex;
+            flex: 1;
+        }
+
+        /* Sidebar (Synced with customer.html) */
+        .sidebar {
+            width: 220px;
+            min-width: 220px;
+            background: rgba(15, 15, 18, 0.98);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            flex-shrink: 0;
+            height: calc(100vh - 51px);
+            position: sticky;
+            top: 51px;
+        }
+
+        .sidebar-user {
+            padding: 20px 16px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .sidebar-email {
+            font-size: 0.8rem;
+            color: var(--text);
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-bottom: 6px;
+        }
+
+        .voice-tag {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 400;
+            text-transform: capitalize;
+            display: inline-block;
+        }
+
+        .sidebar-section-label {
+            padding: 14px 16px 6px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .sidebar-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 16px;
+            margin: 2px 8px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: 0.15s;
+        }
+
+        .sidebar-nav-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+        }
+
+        .sidebar-nav-item.active {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 8px 16px;
+        }
+
+        /* Sidebar Bottom (Synced) */
+        .sidebar-bottom {
+            margin-top: auto;
+            padding: 14px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .quota-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .quota-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            transition: width 0.5s ease;
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
+        }
+
+        .convert-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border: none;
+            border-radius: 100px;
+            color: white !important;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.9rem;
+            box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3);
+            justify-content: center;
+        }
+
+        .convert-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(139, 92, 246, 0.5);
+        }
+
+        .upgrade-btn {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            margin-top: 10px;
+            width: 100%;
+            padding: 8px;
+            font-size: 0.8rem;
+        }
+
+        /* Main Area */
+        .main-area {
+            flex: 1;
+            padding: 20px 40px;
+            overflow-y: auto;
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Middle Column (Main Content) */
+        .left-column {
+            flex: 3;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #fff, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .input-card {
+            background: rgba(24, 24, 27, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+        }
+
+        .upload-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+            border: 2px dashed rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            margin: 20px;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(139, 92, 246, 0.02);
+            transform: scale(0.99);
+        }
+
+        .upload-icon {
+            font-size: 3.5rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 15px rgba(139, 92, 246, 0.4));
+        }
+
+        .file-info-header {
+            padding: 20px 25px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--border);
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-info-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 20px;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .toolbar {
+            padding: 20px 25px;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Right Column (Settings & History) */
+        .right-column {
+            flex: 1.6;
+            min-width: 400px;
+            background: rgba(24, 24, 27, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: sticky;
+            top: 71px;
+            height: fit-content;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        /* Tabs Header */
+        .main-tabs-container {
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 6px;
+            border-radius: 12px;
+            width: fit-content;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .main-tab-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .main-tab-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .main-tab-btn.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .main-tab-content {
+            display: none;
+            width: 100%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .main-tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Job Card (Same as customer.html) */
+        .job-card {
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .job-filename-display {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+        }
+
+        .job-timestamp {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .job-status {
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-completed {
+            color: var(--success);
+        }
+
+        .status-processing {
+            color: var(--accent);
+        }
+
+        .status-failed {
+            color: var(--error);
+        }
+
+        .status-pending {
+            color: var(--text-muted);
+        }
+
+        .btn-dl-job {
+            color: var(--primary);
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-dl-job:hover {
+            transform: scale(1.1);
+        }
+
+        /* Spinner Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Audio Player Row */
+        .audio-player-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .player-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+
+        .player-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
+        }
+
+        .player-slider {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .player-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .player-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: monospace;
+            min-width: 75px;
+            text-align: right;
+        }
+
+        .player-actions-mini {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-left: 5px;
+        }
+
+        .btn-mini-action {
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .btn-mini-action:hover {
+            color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 1000px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main-layout {
+                flex-direction: column;
+            }
+
+            .right-column {
+                position: static;
+                max-height: none;
+                width: 100%;
+            }
+        }
+
+        /* Shaking Gift Icon */
+        .gift-icon-link {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            animation: shakeGift 2s ease-in-out infinite;
+            text-decoration: none;
+            margin-right: 5px;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .gift-icon-link:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
+        }
+
+        @keyframes shakeGift {
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            10% {
+                transform: rotate(-12deg);
+            }
+
+            20% {
+                transform: rotate(12deg);
+            }
+
+            30% {
+                transform: rotate(-8deg);
+            }
+
+            40% {
+                transform: rotate(8deg);
+            }
+
+            50% {
+                transform: rotate(0deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Slim Top Nav (Synced) -->
+    <nav class="slim-nav" id="appScreen">
+        <div class="brand"><i class="fa-solid fa-wave-square"></i> 11<span>LABS</span></div>
+        <div class="user-info">
+            <div class="social-icons-container" id="headerSocialIcons"></div>
+            <a href="affiliate" class="gift-icon-link" title="Giá»›i thiá»‡u báº¡n bÃ¨ - Nháº­n thÆ°á»Ÿng">
+                <i class="fa-solid fa-gift"></i>
+            </a>
+
+            <button onclick="openTeamModal()" class="logout-btn"
+                style="border: none; background: rgba(139, 92, 246, 0.15); color: var(--primary); margin-right: 5px;">
+                <i class="fa-solid fa-users"></i> <span class="btn-text">Nhóm</span>
+            </button>
+            <button onclick="window.location.href='profile'" class="logout-btn"
+                style="border: none; background: rgba(255,255,255,0.1); margin-right: 5px;">
+                <i class="fa-solid fa-user"></i> <span class="btn-text">Hồ sơ</span>
+            </button>
+            <button onclick="logout()" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> <span
+                    class="btn-text">Đăng xuất</span></button>
+        </div>
+    </nav>
+
+    <div class="app-body">
+        <!-- Sidebar (Pixel-Perfect Copy) -->
+        <div class="sidebar">
+            <div class="sidebar-user">
+                <div class="sidebar-avatar" id="sidebarAvatar">?</div>
+                <div class="sidebar-email" id="sidebarEmail">Loading...</div>
+                <span id="userPlanBadge" class="voice-tag" style="background: var(--primary); color: white;">-</span>
+            </div>
+
+            <div class="sidebar-section-label">Công cụ giọng nói</div>
+            <div class="sidebar-nav-item" onclick="window.location.href='customer'">
+                <i class="fa-solid fa-microphone-lines"></i> Văn bản thành giọng nói
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='customer'">
+                <i class="fa-regular fa-clone"></i> Nhân bản giọng nói
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='conversation'">
+                <i class="fa-solid fa-comments"></i> Hội thoại (Mới)
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='dubbing'">
+                <i class="fa-solid fa-language"></i> Lồng tiếng tự động
+            </div>
+            <div class="sidebar-nav-item active">
+                <i class="fa-solid fa-water"></i> Thay đổi giọng nói
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='isolator'">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Tách giọng nói (Mới)
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='speech-to-text'">
+                <i class="fa-solid fa-file-lines"></i> Giọng nói → Văn bản (Mới)
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='music'">
+                <i class="fa-solid fa-music"></i> Sáng tác Nhạc AI (Mới)
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='sound-effect'">
+                <i class="fa-solid fa-volume-high"></i> Hiệu ứng âm thanh
+            </div>
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-section-label">Tài nguyên</div>
+            <div class="sidebar-nav-item" onclick="window.location.href='docs'">
+                <i class="fa-solid fa-book"></i> Tài liệu
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='api-docs'">
+                <i class="fa-solid fa-code"></i> Tài liệu API
+            </div>
+
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-section-label">Tài khoản</div>
+            <div class="sidebar-nav-item" onclick="window.location.href='customer?action=upgrade'">
+                <i class="fa-solid fa-crown" style="color:#f59e0b;"></i> Nâng cấp gói
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='customer?action=jobs'">
+                <i class="fa-solid fa-list-check"></i> Danh sách tác vụ
+            </div>
+
+            <!-- Credit Bar Bottom -->
+            <div class="sidebar-bottom">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-size:0.75rem; font-weight:600; color:var(--text-muted);">TÍN DỤNG</span>
+                    <button onclick="doRefresh()" id="btnRefresh" title="Cập nhật" class="refresh-btn">
+                        <i class="fa-solid fa-rotate" id="refreshIcon"></i>
+                    </button>
+                </div>
+                <div style="font-size:0.8rem; color:var(--text); font-weight:600; margin-bottom:6px;" id="quotaText">Còn
+                    lại: 0 / 0 ký tự</div>
+                <div class="quota-bar">
+                    <div id="quotaFill" class="quota-fill" style="width: 0%;"></div>
+                </div>
+                <div style="font-size:0.72rem; color:var(--text-muted);" id="pointsDisplay">Đang tải...</div>
+
+                <button onclick="window.location.href='customer?action=upgrade'" class="convert-btn upgrade-btn">
+                    <i class="fa-solid fa-crown"></i> Nâng cấp
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Area -->
+        <main class="main-area">
+            <div class="main-layout">
+                <!-- Middle Column: Tool -->
+                <div class="left-column">
+                    <div style="margin-bottom: 20px;">
+
+                        <h1 class="header-title">Thay đổi giọng nói chuyên nghiệp</h1>
+                    </div>
+
+                    <div class="input-card">
+                        <div id="dropZone" class="upload-area" onclick="document.getElementById('fileInput').click()"
+                            style="margin: 20px; border: 2px dashed rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 60px 20px;">
+                            <input type="file" id="fileInput" accept="audio/*,video/*" style="display: none;"
+                                onchange="if(this.files.length) selectFile(this.files[0]);">
+                            <i class="fa-solid fa-cloud-arrow-up upload-icon"
+                                style="font-size: 3rem; color: var(--primary); margin-bottom: 20px; opacity: 0.8;"></i>
+                            <h2 style="font-weight: 700; margin-bottom: 8px; font-size: 1.25rem;">Tải lên tệp âm thanh
+                            </h2>
+                            <p style="color: var(--text-muted); font-size: 0.9rem;">Kéo và thả tệp vào đây hoặc nhấn để
+                                chọn từ máy tính</p>
+                            <div style="margin-top: 20px; font-size: 0.75rem; color: var(--text-muted); opacity: 0.6;">
+                                Hỗ trợ MP3, WAV, M4A (Tối đa 100MB)
+                            </div>
+                        </div>
+
+                        <div id="fileCard" class="file-info-card"
+                            style="display: none; margin: 20px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 15px 20px;">
+                            <div style="display:flex; align-items:center; gap:15px; width: 100%;">
+                                <i class="fa-solid fa-file-audio" style="font-size: 1.2rem; color: var(--primary);"></i>
+                                <div style="display: flex; flex-direction: column; flex: 1;">
+                                    <span id="selectedFileName"
+                                        style="font-weight:700; color:white; font-size: 0.95rem;">filename.mp3</span>
+                                    <div
+                                        style="font-size: 0.75rem; color: var(--text-muted); display: flex; gap: 15px; margin-top: 2px;">
+                                        <span id="selectedFileDuration">Thời lượng: <b>--:--</b></span>
+                                        <span id="selectedFileSize">Dung lượng: <b>0 MB</b></span>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-xmark"
+                                    style="cursor: pointer; color: var(--text-muted); font-size: 1.1rem; transition: 0.2s;"
+                                    onclick="clearFile()" title="Xóa file"></i>
+                            </div>
+                        </div>
+
+                        <div
+                            style="margin: 20px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid var(--border);">
+                            <h3 style="margin-bottom: 15px; font-size: 1.1rem; color: white;">Chọn giọng đọc mục tiêu
+                            </h3>
+                            <select id="voiceSelect" class="form-control"
+                                style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border); border-radius: 8px;">
+                                <option value="">Đang tải danh sách giọng đọc...</option>
+                            </select>
+                        </div>
+
+                        <div class="toolbar"
+                            style="padding: 15px 25px; background: rgba(0, 0, 0, 0.2); border-top: 1px solid var(--border); border-radius: 0 0 24px 24px;">
+                            <div style="color: var(--text-muted); font-size: 0.85rem;">
+                                Phí dự kiến: <span id="estimatedPoints" style="color: white; font-weight: 700;">0</span>
+                                ký tự
+                            </div>
+                            <button class="convert-btn" id="btnIsolate" onclick="handleChangeVoice()" disabled
+                                style="padding: 10px 25px; font-size: 0.85rem;">
+                                <i class="fa-solid fa-water"></i> Bắt đầu thay đổi giọng
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: History only -->
+                <aside class="right-column">
+                    <!-- Live Job Log -->
+                    <div id="liveLogPanel"
+                        style="display:none; margin-bottom:20px; background:rgba(0,0,0,0.3); border:1px solid rgba(139,92,246,0.25); border-radius:12px; overflow:hidden;">
+                        <div
+                            style="display:flex; align-items:center; gap:8px; padding:12px 15px; border-bottom:1px solid rgba(255,255,255,0.06); background:rgba(139,92,246,0.08);">
+                            <i class="fa-solid fa-circle-notch fa-spin" id="liveLogSpinner"
+                                style="color:var(--primary);"></i>
+                            <span id="liveLogTitle"
+                                style="font-weight:700; font-size:0.85rem; color:var(--primary);">ĐANG XỬ LÝ</span>
+                            <span id="liveLogJobId"
+                                style="font-size:0.75rem; color:var(--text-muted); margin-left:auto;"></span>
+                        </div>
+                        <div id="liveLogLines"
+                            style="padding:10px 15px; font-family:monospace; font-size:0.78rem; max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:4px;">
+                        </div>
+                    </div>
+
+                    <div style="display:flex; align-items:center; justify-content: space-between; margin-bottom:20px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <i class="fa-solid fa-clock-rotate-left" style="color:var(--text-muted);"></i>
+                            <span style="font-weight:600; font-size:0.95rem;">Lịch sử</span>
+                            <span id="historyTabCount"
+                                style="background:rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;">0</span>
+                        </div>
+                        <button onclick="clearAllVoiceChangerHistory()" id="btnClearAllHistory"
+                            title="Xóa tất cả lịch sử"
+                            style="background:rgba(239, 68, 68, 0.1); color:var(--error); border:1px solid rgba(239, 68, 68, 0.3); padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.75rem; transition:0.2s; display:none;">
+                            <i class="fa-solid fa-trash-can"></i> Xóa tất cả
+                        </button>
+                    </div>
+                    <div id="jobsList" style="display:flex; flex-direction:column; gap:12px;">
+                        <div style="text-align: center; color: var(--text-muted); padding: 30px 0; font-size: 0.9rem;">
+                            Đang tải...</div>
+                    </div>
+                </aside>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Spinner -->
+    <div class="overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div id="uploadStatus" style="font-weight: 800; margin-top:20px;">Đang tải lên...</div>
+        <div id="uploadProgress" style="color: var(--text-muted); margin-top:5px;">0%</div>
+    </div>
+
+    <script>
+        const API_URL = 'api/voice_changer';
+        const token = localStorage.getItem('auth_token');
+        const fmt = n => Number(n).toLocaleString('vi-VN');
+
+        if (!token) {
+            window.location.href = 'customer';
+        }
+
+        let currentFile = null;
+        let userData = null;
+
+        // Start
+        init();
+
+        function init() {
+            updateUserInfo();
+            loadJobs();
+            loadVoices();
+            setInterval(loadJobs, 10000);
+        }
+
+        async function loadVoices() {
+            try {
+                const res = await fetch('api/voices.php', { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+                const select = document.getElementById('voiceSelect');
+                if (data.status === 'success' && data.voices) {
+                    select.innerHTML = '<option value="">-- Vui lòng chọn giọng đọc --</option>';
+                    data.voices.forEach(v => {
+                        const option = document.createElement('option');
+                        option.value = v.voice_id;
+                        option.textContent = v.name;
+                        select.appendChild(option);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">Lỗi tải danh sách giọng</option>';
+                }
+            } catch (e) {
+                console.error('Error fetching voices:', e);
+                document.getElementById('voiceSelect').innerHTML = '<option value="">Lỗi kết nối</option>';
+            }
+        }
+
+        async function updateUserInfo() {
+            try {
+                const res = await fetch('api/profile.php', { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    userData = data.user;
+                    const balance = data.user.quota_total - data.user.quota_used;
+                    const percent = Math.min(100, (balance / data.user.quota_total) * 100);
+
+                    document.getElementById('sidebarEmail').innerText = data.user.email;
+                    document.getElementById('sidebarAvatar').innerText = data.user.email[0].toUpperCase();
+                    document.getElementById('quotaText').innerText = `Còn lại: ${fmt(balance)} / ${fmt(data.user.quota_total)} ký tự`;
+                    document.getElementById('quotaFill').style.width = percent + '%';
+
+                    // Hiện ngày hết hạn
+                    if (data.user.expires_at) {
+                        const exp = new Date(data.user.expires_at);
+                        const d = exp.getDate() + '/' + (exp.getMonth() + 1) + '/' + exp.getFullYear();
+                        document.getElementById('pointsDisplay').innerText = `Hết hạn: ${d}`;
+                    } else {
+                        document.getElementById('pointsDisplay').innerText = '';
+                    }
+                    const planVal = (data.user.custom_plan_name || data.user.plan_name || data.user.plan || 'Free').toLowerCase();
+                    const badgeEl = document.getElementById('userPlanBadge');
+                    badgeEl.innerText = planVal.toUpperCase();
+
+                    if (planVal === 'supper_vip' || planVal === 'suppervip' || planVal === 'supper vip') {
+                        badgeEl.style.background = 'linear-gradient(135deg, #d4af37, #f3e5ab)';
+                        badgeEl.style.color = '#000';
+                        badgeEl.style.border = '1px solid #c5a017';
+                        badgeEl.style.fontWeight = 'bold';
+                        badgeEl.style.boxShadow = '0 0 10px rgba(212, 175, 55, 0.4)';
+                    } else if (planVal === 'basic') {
+                        badgeEl.style.background = '#3b82f6';
+                        badgeEl.style.color = 'white';
+                        badgeEl.style.border = 'none';
+                        badgeEl.style.fontWeight = 'normal';
+                        badgeEl.style.boxShadow = 'none';
+                    } else {
+                        badgeEl.style.background = 'var(--primary)';
+                        badgeEl.style.color = 'white';
+                        badgeEl.style.border = 'none';
+                        badgeEl.style.fontWeight = 'normal';
+                        badgeEl.style.boxShadow = 'none';
+                    }
+
+                    loadSocialSettings();
+                }
+            } catch (e) { }
+        }
+
+        function doRefresh() {
+            const icon = document.getElementById('refreshIcon');
+            icon.style.transition = 'transform 0.5s';
+            icon.style.transform = 'rotate(360deg)';
+            setTimeout(() => { icon.style.transition = ''; icon.style.transform = ''; }, 600);
+            updateUserInfo();
+        }
+
+        async function loadSocialSettings() {
+            try {
+                const res = await fetch(`api/social_settings.php`);
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const container = document.getElementById('headerSocialIcons');
+                    if (!container) return;
+                    container.innerHTML = '';
+                    const social = data.settings;
+                    if (social.zalo) addSocialIcon(container, 'zalo', 'Zalo', social.zalo);
+                    if (social.telegram) addSocialIcon(container, 'telegram', 'Telegram', social.telegram);
+                    if (social.facebook) addSocialIcon(container, 'facebook', 'Facebook', social.facebook);
+                    if (social.youtube) addSocialIcon(container, 'youtube', 'YouTube', social.youtube);
+                }
+            } catch (e) { }
+        }
+
+        function addSocialIcon(container, type, name, url) {
+            if (!url) return;
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+            a.className = `social-icon ${type}`;
+            a.title = name;
+            let iconClass = '';
+            if (type === 'zalo') iconClass = 'fa-solid fa-comment-dots';
+            if (type === 'telegram') iconClass = 'fa-brands fa-telegram';
+            if (type === 'facebook') iconClass = 'fa-brands fa-facebook';
+            if (type === 'youtube') iconClass = 'fa-brands fa-youtube';
+            a.innerHTML = `<i class="${iconClass}"></i>`;
+            container.appendChild(a);
+        }
+
+
+        async function loadJobs() {
+            try {
+                const res = await fetch(`api/isolator/list.php`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    document.getElementById('historyTabCount').innerText = data.jobs.length;
+                    document.getElementById('btnClearAllHistory').style.display = data.jobs.length > 0 ? 'block' : 'none';
+                    renderJobs(data.jobs);
+                }
+            } catch (e) { }
+        }
+
+        function renderJobs(jobs) {
+            const list = document.getElementById('jobsList');
+            if (jobs.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding:30px 0;">Chưa có tác vụ nào.</div>';
+                return;
+            }
+            list.innerHTML = jobs.map(j => {
+                const date = new Date(j.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                const dur = j.duration ? formatDuration(j.duration) : '--:--';
+                let playerHtml = '';
+
+                if (j.status === 'completed' && j.result_file) {
+                    const audioUrl = `api/results/isolator/${j.result_file}`;
+                    const pointsUsed = j.points_used || j.credits_used || 0;
+
+                    playerHtml = `
+                    <div class="audio-player-row" id="player-${j.id}">
+                        <button class="player-btn" id="play-btn-${j.id}" onclick="playJobAudio('${j.id}')">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                        <input type="range" class="player-slider" id="seek-${j.id}" value="0" min="0" step="0.1">
+                        <div class="player-time" id="time-${j.id}">0:00 / 0:00</div>
+                        <div class="player-actions-mini">
+                            <a href="${audioUrl}" download class="btn-mini-action" title="Tải MP3" id="mini-dl-mp3-${j.id}"><i class="fa-solid fa-download"></i></a>
+                            ${j.srt_file ? `<a href="api/results/isolator/${j.srt_file}" download class="btn-mini-action" title="Tải SRT" id="mini-dl-srt-${j.id}"><i class="fa-solid fa-file-lines"></i></a>` : `<button class="btn-mini-action" title="Tải SRT" id="mini-dl-srt-${j.id}" style="display:none"><i class="fa-solid fa-file-lines"></i></button>`}
+                        </div>
+                    </div>
+                    ${pointsUsed ? `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                        <div style="font-size: 0.85rem; font-weight: 600; color: #a1a1aa; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 6px;">
+                            Tín dụng sử dụng: <span style="color: var(--primary);">${Number(pointsUsed).toLocaleString('vi-VN')}</span>
+                        </div>
+                    </div>
+                    ` : ''}
+                    <audio id="audio-${j.id}" style="display:none" preload="metadata"></audio>
+                    `;
+                }
+
+                return `
+                <div class="job-card">
+                    <div class="job-header">
+                        <span class="job-timestamp">${date}</span>
+                        <span class="job-status status-${j.status}">${j.status}</span>
+                    </div>
+                    <div class="job-filename-display" title="${j.source_file}">${j.source_file}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                        <span style="font-size:0.75rem; color:var(--text-muted);"><i class="fa-solid fa-stopwatch"></i> ${dur}</span>
+                    </div>
+                    ${playerHtml}
+                </div>`;
+            }).join('');
+
+            jobs.forEach(j => {
+                if (j.status === 'completed' && j.result_file) {
+                    setupVoiceChangerPlayer(j.id, `api/results/voice_changer/${j.result_file}`);
+                }
+            });
+        }
+
+        function formatTime(seconds) {
+            if (!seconds || isNaN(seconds)) return "0:00";
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        function setupVoiceChangerPlayer(jobId, audioUrl) {
+            const audio = document.getElementById(`audio-${jobId}`);
+            const seek = document.getElementById(`seek-${jobId}`);
+            const time = document.getElementById(`time-${jobId}`);
+
+            if (!audio || !seek || !time) return;
+            audio.src = audioUrl;
+
+            const updateDuration = () => {
+                if (audio.duration && !isNaN(audio.duration) && audio.duration !== Infinity) {
+                    seek.max = audio.duration;
+                    time.innerText = `0:00 / ${formatTime(audio.duration)}`;
+                }
+            };
+
+            if (audio.readyState >= 1) updateDuration();
+            audio.onloadedmetadata = updateDuration;
+            audio.ondurationchange = updateDuration;
+            audio.oncanplay = updateDuration;
+
+            audio.ontimeupdate = () => {
+                if (!seek.max || seek.max === "0" || seek.max === "NaN") updateDuration();
+                if (!audio.seeking_manual) {
+                    seek.value = audio.currentTime;
+                    time.innerText = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+                }
+            };
+
+            seek.oninput = () => {
+                audio.seeking_manual = true;
+                time.innerText = `${formatTime(seek.value)} / ${formatTime(audio.duration)}`;
+            };
+
+            seek.onchange = () => {
+                audio.currentTime = seek.value;
+                audio.seeking_manual = false;
+            };
+
+            audio.onplay = updateDuration;
+        }
+
+        function playJobAudio(jobId) {
+            const audio = document.getElementById(`audio-${jobId}`);
+            const btnIcon = document.querySelector(`#play-btn-${jobId} i`);
+            if (!audio || !btnIcon) return;
+
+            document.querySelectorAll('audio').forEach(a => {
+                if (a !== audio) {
+                    a.pause();
+                    const otherId = a.id.replace('audio-', '');
+                    const otherIcon = document.querySelector(`#play-btn-${otherId} i`);
+                    if (otherIcon) otherIcon.className = 'fa-solid fa-play';
+                }
+            });
+
+            if (audio.paused) {
+                audio.play().then(() => {
+                    btnIcon.className = 'fa-solid fa-pause';
+                }).catch(e => console.error("Play error:", e));
+            } else {
+                audio.pause();
+                btnIcon.className = 'fa-solid fa-play';
+            }
+            audio.onended = () => {
+                btnIcon.className = 'fa-solid fa-play';
+            };
+        }
+
+        function switchRightTab(tab) {
+            document.querySelectorAll('.main-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.main-tab-content').forEach(c => c.classList.remove('active'));
+
+            if (tab === 'config') {
+                document.getElementById('btnTabConfig').classList.add('active');
+                document.getElementById('tabConfig').classList.add('active');
+            } else {
+                document.getElementById('btnTabHistory').classList.add('active');
+                document.getElementById('tabHistory').classList.add('active');
+                loadJobs();
+            }
+        }
+
+        function selectFile(file) {
+            currentFile = file;
+            document.getElementById('dropZone').style.display = 'none';
+            document.getElementById('fileCard').style.display = 'flex';
+            document.getElementById('btnIsolate').disabled = false;
+            document.getElementById('selectedFileName').innerText = file.name;
+            const mb = (file.size / (1024 * 1024)).toFixed(2);
+            document.getElementById('selectedFileSize').innerHTML = `Dung lượng: <b>${mb} MB</b>`;
+
+            const objectUrl = URL.createObjectURL(file);
+            const media = file.type.includes('video') ? document.createElement('video') : document.createElement('audio');
+            media.src = objectUrl;
+            media.onloadedmetadata = () => {
+                const duration = media.duration;
+                const points = Math.ceil((duration / 60) * 1500);
+                document.getElementById('selectedFileDuration').innerHTML = `Thời lượng: <b>${formatDuration(duration)}</b>`;
+                document.getElementById('estimatedPoints').innerText = fmt(points);
+                URL.revokeObjectURL(objectUrl);
+            };
+        }
+
+        function clearFile() {
+            currentFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('dropZone').style.display = 'flex';
+            document.getElementById('fileCard').style.display = 'none';
+            document.getElementById('btnIsolate').disabled = true;
+            document.getElementById('estimatedPoints').innerText = '0';
+        }
+
+        function handleChangeVoice() {
+            if (!currentFile) return;
+
+            const voiceSelect = document.getElementById('voiceSelect');
+            if (!voiceSelect || !voiceSelect.value) {
+                alert('Vui lòng chọn giọng đọc mục tiêu!');
+                return;
+            }
+
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.style.display = 'flex';
+            document.getElementById('uploadStatus').innerText = 'Đang tải lên...';
+            document.getElementById('uploadProgress').innerText = '0%';
+
+            const formData = new FormData();
+            formData.append('file', currentFile);
+            formData.append('voice_id', voiceSelect.value);
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `${API_URL}/upload.php`, true);
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+            xhr.upload.onprogress = e => {
+                if (e.lengthComputable) {
+                    const pct = Math.round((e.loaded / e.total) * 100);
+                    document.getElementById('uploadProgress').innerText = `${pct}%`;
+                    if (pct === 100) document.getElementById('uploadStatus').innerText = 'Đang đợi server xử lý...';
+                }
+            };
+            xhr.onload = function () {
+                overlay.style.display = 'none';
+                try {
+                    const res = JSON.parse(xhr.responseText);
+                    if (res.status === 'success') {
+                        clearFile();
+                        updateUserInfo();
+                        startLiveLog(res.job_id);
+                        loadJobs();
+                    } else { alert('Lỗi: ' + res.error); }
+                } catch (e) { alert('Lỗi xử lý server: ' + xhr.responseText.substring(0, 100)); }
+            };
+            xhr.onerror = () => { overlay.style.display = 'none'; alert('Lỗi kết nối.'); };
+            xhr.send(formData);
+        }
+
+        let liveLogInterval = null;
+        function startLiveLog(jobId) {
+            const panel = document.getElementById('liveLogPanel');
+            const logLines = document.getElementById('liveLogLines');
+            const spinner = document.getElementById('liveLogSpinner');
+            panel.style.display = 'block';
+            logLines.innerHTML = '';
+            document.getElementById('liveLogJobId').innerText = `#${jobId}`;
+            addLog('📤 File đã upload, đang chờ worker nhận job...', 'info');
+
+            if (liveLogInterval) clearInterval(liveLogInterval);
+            let lastStatus = '';
+            let dots = 0;
+            liveLogInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(`api/isolator/progress.php?job_id=${jobId}`);
+                    const data = await res.json();
+                    if (!data.job) return;
+                    const job = data.job;
+
+                    if (job.status !== lastStatus) {
+                        lastStatus = job.status;
+                        if (job.status === 'processing') {
+                            addLog('⚙️ Worker đã nhận job — đang thay đổi giọng nói...', 'info');
+                        } else if (job.status === 'completed') {
+                            clearInterval(liveLogInterval);
+                            spinner.className = 'fa-solid fa-circle-check';
+                            spinner.style.color = '#10b981';
+                            document.querySelector('#liveLogPanel div:first-child span:first-child').style.color = '#10b981';
+                            document.querySelector('#liveLogPanel div:first-child span:first-child').innerText = 'HOÀN THÀNH';
+                            if (job.duration) addLog(`⏱ Thời lượng: ${formatDuration(parseFloat(job.duration))}`, 'success');
+                            if (job.points_used) addLog(`💰 Trừ: ${fmt(job.points_used)} ký tự`, 'success');
+                            addLog('✅ Hoàn tất! File đã sẵn sàng tải xuống.', 'success');
+                            updateUserInfo();
+                            loadJobs();
+                        } else if (job.status === 'failed') {
+                            clearInterval(liveLogInterval);
+                            spinner.className = 'fa-solid fa-circle-xmark';
+                            spinner.style.color = '#ef4444';
+                            addLog(`❌ Thất bại: ${job.error_message || 'Lỗi không xác định'}`, 'error');
+                            loadJobs();
+                        }
+                    } else if (job.status === 'pending') {
+                        dots = (dots + 1) % 4;
+                        const lastLine = logLines.lastElementChild;
+                        if (lastLine && lastLine.dataset.type === 'waiting') {
+                            lastLine.innerText = `⏳ Chờ worker xử lý${'.'.repeat(dots + 1)}`;
+                        } else {
+                            addLog(`⏳ Chờ worker xử lý.`, 'waiting');
+                        }
+                    }
+                } catch (e) { }
+            }, 2000);
+        }
+
+        function addLog(msg, type = 'info') {
+            const logLines = document.getElementById('liveLogLines');
+            const colors = { info: '#a78bfa', success: '#10b981', error: '#ef4444', waiting: 'var(--text-muted)' };
+            const line = document.createElement('div');
+            line.dataset.type = type;
+            line.style.cssText = `color:${colors[type] || colors.info}; line-height:1.5;`;
+            const now = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            line.innerText = `[${now}] ${msg}`;
+            logLines.appendChild(line);
+            logLines.scrollTop = logLines.scrollHeight;
+        }
+
+        function formatDuration(sec) {
+            const m = Math.floor(sec / 60);
+            const s = Math.round(sec % 60);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function logout() { localStorage.removeItem('auth_token'); window.location.href = 'customer'; }
+
+        // ===== TEAM MODAL =====
+        function openTeamModal() {
+            document.getElementById('teamModal').style.display = 'flex';
+            loadTeamData();
+        }
+        function closeTeamModal() {
+            document.getElementById('teamModal').style.display = 'none';
+        }
+        async function loadTeamData() {
+            const container = document.getElementById('teamContent');
+            container.innerHTML = '<div style="text-align:center;padding:50px;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top:15px;">Đang tải...</p></div>';
+            try {
+                const res = await fetch(`api/team/manager.php?action=get_team&token=${token}`);
+                const data = await res.json();
+                if (data.status === 'success') { renderTeamUI(data.team); }
+                else { container.innerHTML = `<div style="color:var(--error);padding:30px;text-align:center;">${data.error}</div>`; }
+            } catch (e) { container.innerHTML = '<div style="color:var(--error);padding:30px;text-align:center;">Lỗi kết nối server</div>'; }
+        }
+        function renderTeamUI(team) {
+            const container = document.getElementById('teamContent');
+            let html = '';
+            if (team.is_leader) {
+                html += `
+                <div style="margin-bottom:25px;background:rgba(139,92,246,0.1);padding:20px;border-radius:12px;border:1px solid rgba(139,92,246,0.2);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                        <label style="font-weight:700;color:var(--primary);">MÃ MỜI THÀNH VIÊN</label>
+                        <button onclick="teamResetCode()" class="btn-mini"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+                    </div>
+                    <div style="display:flex;gap:10px;">
+                        <input type="text" readonly id="inviteCodeInput" value="${team.invite_code}" style="flex:1;background:#000;border:1px solid var(--border);padding:10px;border-radius:8px;color:var(--primary);font-weight:700;font-family:monospace;font-size:1.2rem;text-align:center;">
+                        <button onclick="teamCopyCode()" class="btn-primary-sm"><i class="fa-solid fa-copy"></i> Copy</button>
+                    </div>
+                    <p style="font-size:0.8rem;color:var(--text-muted);margin-top:10px;"><i class="fa-solid fa-circle-info"></i> Gửi mã này cho bạn bè để họ gia nhập nhóm và dùng chung điểm của bạn.</p>
+                </div>
+                <h4 style="margin-bottom:15px;"><i class="fa-solid fa-list-ul"></i> Danh sách thành viên (${team.members.length})</h4>
+                <div style="overflow-x:auto;max-height:250px;overflow-y:auto;">
+                <table class="team-table">
+                    <thead><tr><th>Email</th><th>Hạn mức</th><th>Đã dùng</th><th></th></tr></thead>
+                    <tbody>
+                    ${team.members.map(m => `
+                        <tr>
+                            <td>${m.email}</td>
+                            <td><div style="display:flex;gap:5px;align-items:center;">
+                                <input type="number" id="limit_${m.id}" value="${m.team_quota_limit}" step="10000" style="width:90px;background:rgba(0,0,0,0.3);border:1px solid var(--border);color:white;border-radius:4px;padding:4px;">
+                                <button onclick="teamUpdateLimit(${m.id})" class="btn-mini" style="background:var(--primary);color:white;border:none;"><i class="fa-solid fa-floppy-disk"></i></button>
+                            </div></td>
+                            <td>${m.team_quota_used.toLocaleString()}</td>
+                            <td><button onclick="teamRemoveMember(${m.id})" class="btn-mini" style="color:var(--error);"><i class="fa-solid fa-user-minus"></i></button></td>
+                        </tr>`).join('')}
+                    ${team.members.length === 0 ? '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">Chưa có thành viên.</td></tr>' : ''}
+                    </tbody>
+                </table></div>
+                <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(239,68,68,0.2);text-align:right;">
+                    <button onclick="teamDisband()" style="background:none;border:1px solid var(--error);color:var(--error);padding:8px 16px;border-radius:8px;cursor:pointer;"><i class="fa-solid fa-skull-crossbones"></i> Giải tán nhóm</button>
+                </div>`;
+            } else if (team.is_member) {
+                html += `
+                <div style="text-align:center;padding:30px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid var(--border);">
+                    <i class="fa-solid fa-user-group fa-3x" style="color:var(--primary);margin-bottom:20px;"></i>
+                    <h3>Bạn đang ở trong nhóm</h3>
+                    <p style="color:var(--text-muted);margin:10px 0;">Trưởng nhóm: <strong>${team.parent_email}</strong></p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:25px 0;">
+                        <div style="background:rgba(0,0,0,0.2);padding:15px;border-radius:10px;">
+                            <div style="font-size:0.8rem;color:var(--text-muted);">HẠN MỨC ĐƯỢC CẤP</div>
+                            <div style="font-size:1.2rem;font-weight:700;color:var(--primary);">${team.team_quota_limit.toLocaleString()}</div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.2);padding:15px;border-radius:10px;">
+                            <div style="font-size:0.8rem;color:var(--text-muted);">BẠN ĐÃ DÙNG</div>
+                            <div style="font-size:1.2rem;font-weight:700;color:var(--accent);">${team.team_quota_used.toLocaleString()}</div>
+                        </div>
+                    </div>
+                    <button onclick="teamLeave()" style="background:none;border:1px solid var(--error);color:var(--error);padding:8px 20px;border-radius:8px;cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i> Rời khỏi nhóm</button>
+                </div>`;
+            } else {
+                html += `
+                <div style="text-align:center;padding:30px;">
+                    <i class="fa-solid fa-users-slash fa-3x" style="color:var(--text-muted);margin-bottom:20px;"></i>
+                    <h3>Bạn chưa tham gia nhóm nào</h3>
+                    <p style="color:var(--text-muted);margin:15px 0;">Gia nhập nhóm để nhận điểm chia sẻ từ trưởng nhóm của bạn.</p>
+                    <div style="max-width:400px;margin:30px auto;background:rgba(139,92,246,0.05);padding:25px;border-radius:16px;border:1px solid rgba(139,92,246,0.1);">
+                        <label style="display:block;text-align:left;margin-bottom:10px;font-weight:600;">NHẬP MÃ MỜI</label>
+                        <div style="display:flex;gap:10px;">
+                            <input type="text" id="joinInviteCode" placeholder="ABC123XYZ..." style="flex:1;background:#000;border:1px solid var(--border);padding:12px;border-radius:8px;color:white;text-align:center;font-weight:700;text-transform:uppercase;">
+                            <button onclick="teamJoin()" class="btn-primary-sm">Gia nhập</button>
+                        </div>
+                    </div>
+                    <div style="margin-top:30px;border-top:1px solid var(--border);padding-top:20px;">
+                        <p style="font-size:0.9rem;color:var(--text-muted);">Hoặc nếu bạn muốn trở thành Trưởng nhóm:</p>
+                        <button onclick="teamResetCode()" style="margin-top:10px;padding:8px 16px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:white;cursor:pointer;"><i class="fa-solid fa-crown" style="color:#f59e0b;"></i> Kích hoạt Mã mời của tôi</button>
+                    </div>
+                </div>`;
+            }
+            container.innerHTML = html;
+        }
+        async function teamApiCall(action, extra = {}) {
+            const res = await fetch('api/team/manager.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, action, ...extra })
+            });
+            return res.json();
+        }
+        async function teamJoin() {
+            const code = document.getElementById('joinInviteCode').value;
+            if (!code) return alert('Vui lòng nhập mã mời.');
+            try {
+                const data = await teamApiCall('join_team', { invite_code: code });
+                if (data.status === 'success') { alert(data.message); loadTeamData(); updateUserInfo(); }
+                else alert(data.error);
+            } catch (e) { alert('Lỗi kết nối.'); }
+        }
+        async function teamUpdateLimit(memberId) {
+            const limit = document.getElementById(`limit_${memberId}`).value;
+            try {
+                const data = await teamApiCall('update_limit', { member_id: memberId, limit });
+                if (data.status === 'success') loadTeamData();
+                else alert(data.error);
+            } catch (e) { alert('Lỗi kết nối.'); }
+        }
+        async function teamRemoveMember(memberId) {
+            if (!confirm('Bạn có chắc muốn mời thành viên này rời nhóm?')) return;
+            try {
+                const data = await teamApiCall('remove_member', { member_id: memberId });
+                if (data.status === 'success') loadTeamData();
+                else alert(data.error);
+            } catch (e) { alert('Lỗi kết nối.'); }
+        }
+        async function teamLeave() {
+            if (!confirm('Bạn có chắc muốn rời khỏi nhóm hiện tại?')) return;
+            try {
+                const data = await teamApiCall('leave_team');
+                if (data.status === 'success') { loadTeamData(); updateUserInfo(); }
+                else alert(data.error);
+            } catch (e) { alert('Lỗi kết nối.'); }
+        }
+        async function teamDisband() {
+            if (!confirm('⚠️ Bạn có chắc muốn GIẢI TÁN nhóm?\nToàn bộ thành viên sẽ bị tách ra khỏi nhóm.')) return;
+            if (!confirm('Xác nhận lần cuối: Giải tán nhóm không thể hoàn tác!')) return;
+            try {
+                const data = await teamApiCall('disband_team');
+                if (data.status === 'success') { loadTeamData(); updateUserInfo(); }
+                else alert(data.error);
+            } catch (e) { alert('Lỗi kết nối.'); }
+        }
+        async function teamResetCode() {
+            try {
+                const data = await teamApiCall('reset_invite_code');
+                if (data.status === 'success') loadTeamData();
+                else alert(data.error);
+            } catch (e) { alert('Lỗi kết nối.'); }
+        }
+        function teamCopyCode() {
+            const el = document.getElementById('inviteCodeInput');
+            el.select();
+            document.execCommand('copy');
+            const btn = event.target.closest('button');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+            setTimeout(() => btn.innerHTML = orig, 2000);
+        }
+
+        async function clearAllVoiceChangerHistory() {
+            if (!confirm('Bạn có chắc chắn muốn xóa TẤT CẢ lịch sử thay đổi giọng nói không? Hành động này không thể hoàn tác và sẽ xóa tất cả các file kết quả.')) return;
+            try {
+                const res = await fetch(`api/voice_changer/clear_history.php`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('Đã xóa thành công toàn bộ lịch sử!');
+                    loadJobs();
+                } else {
+                    alert('Lỗi: ' + data.error);
+                }
+            } catch (e) {
+                alert('Lỗi kết nối server.');
+            }
+        }
+
+        // Drag/Drop
+        const dz = document.getElementById('dropZone');
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => dz.addEventListener(e, x => { x.preventDefault(); x.stopPropagation(); }));
+        dz.addEventListener('drop', x => { if (x.dataTransfer.files.length) selectFile(x.dataTransfer.files[0]); });
+    </script>
+    <!-- Team Modal -->
+    <div id="teamModal" class="modal-overlay" onclick="if(event.target===this)closeTeamModal()"
+        style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); z-index:9999; justify-content:center; align-items:center; padding:20px;">
+        <div
+            style="background:#18181b; border:1px solid rgba(255,255,255,0.1); border-radius:20px; width:100%; max-width:700px; max-height:90vh; overflow-y:auto; box-shadow:0 25px 50px rgba(0,0,0,0.5);">
+            <div
+                style="padding:20px 25px; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0; font-size:1.1rem;"><i class="fa-solid fa-users"></i> Quản lý nhóm &amp; Chia sẻ
+                    điểm</h3>
+                <button onclick="closeTeamModal()"
+                    style="background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer; line-height:1;">&times;</button>
+            </div>
+            <div id="teamContent" style="padding:25px; min-height:300px;">
+                <div style="text-align:center; padding:50px;">
+                    <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+                    <p style="margin-top:15px;">Đang tải dữ liệu nhóm...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <style>
+        .btn-mini {
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-mini:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .team-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .team-table th {
+            text-align: left;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .team-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .btn-primary-sm {
+            padding: 8px 20px;
+            border-radius: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+
+        .btn-primary-sm:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Shaking Gift Icon */
+        .gift-icon-link {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            animation: shakeGift 2s ease-in-out infinite;
+            text-decoration: none;
+            margin-right: 5px;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .gift-icon-link:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
+        }
+
+        @keyframes shakeGift {
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            10% {
+                transform: rotate(-12deg);
+            }
+
+            20% {
+                transform: rotate(12deg);
+            }
+
+            30% {
+                transform: rotate(-8deg);
+            }
+
+            40% {
+                transform: rotate(8deg);
+            }
+
+            50% {
+                transform: rotate(0deg);
+            }
+        }
+    </style>
+
+</body>
+
+</html>

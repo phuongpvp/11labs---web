@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="icon.png">
+    <title>Hồ sơ người dùng - AI Voice Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --bg: #09090b;
+            --surface: #18181b;
+            --border: #27272a;
+            --text: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --error: #ef4444;
+            --success: #22c55e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, #09090b);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("https://www.transparenttextures.com/patterns/carbon-fibre.png");
+            opacity: 0.1;
+            z-index: -1;
+        }
+
+        nav {
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(9, 9, 11, 0.5);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .container {
+            flex: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            width: 100%;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            font-size: 2rem;
+        }
+
+        .card {
+            background: rgba(24, 24, 27, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .info-item label {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .info-item div {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-back {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-back:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        td {
+            font-size: 0.95rem;
+        }
+
+        .msg {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .msg.error {
+            color: var(--error);
+        }
+
+        .msg.success {
+            color: var(--success);
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <a href="customer" class="btn btn-back"><i class="fa-solid fa-arrow-left"></i> Quay lại</a>
+        <div style="font-weight: 700; font-size: 1.2rem;">Hồ sơ của bạn</div>
+        <div style="width: 100px;"></div> <!-- Spacer -->
+    </nav>
+
+    <div class="container">
+        <!-- User Info -->
+        <div class="card">
+            <h2><i class="fa-solid fa-id-card"></i> Thông tin tài khoản</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Email</label>
+                    <div id="userEmail">-</div>
+                </div>
+                <div class="info-item">
+                    <label>Gói cước</label>
+                    <div id="userPlan" style="color: var(--primary);">-</div>
+                </div>
+                <div class="info-item">
+                    <label>Dung lượng còn</label>
+                    <div id="userQuota">-</div>
+                </div>
+                <div class="info-item">
+                    <label>Hết hạn ngày</label>
+                    <div id="userExpiry">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Change Password -->
+        <div class="card">
+            <h2><i class="fa-solid fa-lock"></i> Đổi mật khẩu</h2>
+            <div class="form-group">
+                <label>Mật khẩu cũ</label>
+                <input type="password" id="oldPass" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Mật khẩu mới</label>
+                <input type="password" id="newPass" class="form-control">
+            </div>
+            <button class="btn btn-primary" onclick="changePassword()">Cập nhật</button>
+            <div id="passMsg" class="msg"></div>
+        </div>
+
+        <!-- API Key -->
+        <div class="card">
+            <h2><i class="fa-solid fa-key"></i> API Key</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">
+                Sử dụng API key để tích hợp vào ứng dụng của bạn.
+                <a href="api-docs" style="color: var(--primary); text-decoration: none;">Xem tài liệu API →</a>
+            </p>
+            <div id="apiKeySection">
+                <div id="apiKeyEmpty" style="display:none;">
+                    <p style="color: var(--text-muted); margin-bottom: 15px;">Bạn chưa có API key. Tạo key để bắt đầu sử
+                        dụng API.</p>
+                    <button class="btn btn-primary" onclick="generateApiKey()">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Tạo API Key
+                    </button>
+                </div>
+                <div id="apiKeyExists" style="display:none;">
+                    <div style="display:flex;gap:10px;align-items:center;margin-bottom:15px;">
+                        <input type="text" id="apiKeyValue" class="form-control" readonly
+                            style="font-family:monospace;font-size:0.9rem;flex:1;letter-spacing:0.5px;">
+                        <button class="btn btn-primary" onclick="copyApiKey()" title="Copy" style="padding:10px 14px;">
+                            <i class="fa-solid fa-copy"></i>
+                        </button>
+                    </div>
+                    <div style="display:flex;gap:10px;">
+                        <button class="btn btn-back" onclick="regenerateApiKey()" style="font-size:0.85rem;">
+                            <i class="fa-solid fa-arrows-rotate"></i> Tạo lại key mới
+                        </button>
+                        <button class="btn" onclick="revokeApiKey()"
+                            style="font-size:0.85rem;background:transparent;border:1px solid var(--error);color:var(--error);">
+                            <i class="fa-solid fa-trash"></i> Hủy key
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="apiKeyMsg" class="msg"></div>
+        </div>
+
+        <!-- History -->
+        <div class="card">
+            <h2 style="margin-bottom: 5px;"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử sử dụng gần đây</h2>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px; font-style: italic;">
+                <i class="fa-solid fa-circle-info"></i> Lưu ý: Dữ liệu sẽ tự động xóa sau 24 giờ để đảm bảo bảo mật.
+            </p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Thời gian</th>
+                        <th>Trạng thái</th>
+                        <th>Nội dung (Preview)</th>
+                        <th>Ký tự</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTable">
+                    <tr>
+                        <td colspan="3" style="text-align:center;">Đang tải...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = './api';
+        const token = localStorage.getItem('auth_token');
+
+        if (!token) {
+            window.location.href = 'login';
+        }
+
+        async function loadProfile() {
+            try {
+                const res = await fetch(`${API_BASE}/profile.php?token=${encodeURIComponent(token)}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (res.ok && data.status === 'success') {
+                    // Fill Info
+                    document.getElementById('userEmail').innerText = data.user.email;
+                    document.getElementById('userPlan').innerText = data.user.plan_name;
+                    document.getElementById('userQuota').innerText = Number(data.user.quota_total - data.user.quota_used).toLocaleString('vi-VN') + ' ký tự';
+                    document.getElementById('userExpiry').innerText = new Date(data.user.expires_at).toLocaleDateString('vi-VN');
+
+                    // Fill API Key
+                    if (data.user.api_key) {
+                        document.getElementById('apiKeyEmpty').style.display = 'none';
+                        document.getElementById('apiKeyExists').style.display = 'block';
+                        document.getElementById('apiKeyValue').value = data.user.api_key;
+                    } else {
+                        document.getElementById('apiKeyEmpty').style.display = 'block';
+                        document.getElementById('apiKeyExists').style.display = 'none';
+                    }
+
+                    // Fill History
+                    const tbody = document.getElementById('historyTable');
+                    if (data.logs.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Chưa có lịch sử sử dụng trong 24h qua</td></tr>';
+                    } else {
+                        tbody.innerHTML = data.logs.map(log => {
+                            let statusBadge = '';
+                            if (log.status === 'completed') {
+                                statusBadge = '<span style="color: var(--success);"><i class="fa-solid fa-check"></i> Xong</span>';
+                            } else if (log.status && log.status.startsWith('failed')) {
+                                statusBadge = '<span style="color: var(--error);"><i class="fa-solid fa-xmark"></i> Lỗi</span>';
+                            } else {
+                                statusBadge = '<span style="color: var(--primary);"><i class="fa-solid fa-spinner fa-spin"></i> Đang chạy</span>';
+                            }
+
+                            return `
+                            <tr>
+                                <td>${new Date(log.created_at).toLocaleString('vi-VN')}</td>
+                                <td>${statusBadge}</td>
+                                <td style="max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${log.text_preview}</td>
+                                <td>${Number(log.characters_used || 0).toLocaleString('vi-VN')}</td>
+                            </tr>
+                        `}).join('');
+                    }
+                } else {
+                    if (res.status === 401) {
+                        alert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+                        window.location.href = 'login';
+                    } else {
+                        alert('Lỗi hệ thống: ' + (data.error || 'Không thể tải dữ liệu'));
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Lỗi kết nối server');
+            }
+        }
+
+        // --- API Key Functions ---
+        async function generateApiKey() {
+            const msgEl = document.getElementById('apiKeyMsg');
+            try {
+                const res = await fetch(`${API_BASE}/profile.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ action: 'generate_api_key' })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    document.getElementById('apiKeyEmpty').style.display = 'none';
+                    document.getElementById('apiKeyExists').style.display = 'block';
+                    document.getElementById('apiKeyValue').value = data.api_key;
+                    msgEl.innerText = '✅ Tạo API key thành công!';
+                    msgEl.className = 'msg success';
+                } else {
+                    msgEl.innerText = '❌ ' + (data.error || 'Lỗi');
+                    msgEl.className = 'msg error';
+                }
+            } catch (e) {
+                msgEl.innerText = '❌ Lỗi kết nối';
+                msgEl.className = 'msg error';
+            }
+        }
+
+        function copyApiKey() {
+            const input = document.getElementById('apiKeyValue');
+            navigator.clipboard.writeText(input.value).then(() => {
+                const msgEl = document.getElementById('apiKeyMsg');
+                msgEl.innerText = '✅ Đã copy API key!';
+                msgEl.className = 'msg success';
+                setTimeout(() => { msgEl.innerText = ''; }, 2000);
+            });
+        }
+
+        async function regenerateApiKey() {
+            if (!confirm('Tạo lại key mới? Key cũ sẽ không còn dùng được.')) return;
+            await generateApiKey();
+        }
+
+        async function revokeApiKey() {
+            if (!confirm('Hủy API key? Tất cả ứng dụng đang dùng key này sẽ ngừng hoạt động.')) return;
+            const msgEl = document.getElementById('apiKeyMsg');
+            try {
+                const res = await fetch(`${API_BASE}/profile.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ action: 'revoke_api_key' })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    document.getElementById('apiKeyEmpty').style.display = 'block';
+                    document.getElementById('apiKeyExists').style.display = 'none';
+                    document.getElementById('apiKeyValue').value = '';
+                    msgEl.innerText = '✅ Đã hủy API key';
+                    msgEl.className = 'msg success';
+                } else {
+                    msgEl.innerText = '❌ ' + (data.error || 'Lỗi');
+                    msgEl.className = 'msg error';
+                }
+            } catch (e) {
+                msgEl.innerText = '❌ Lỗi kết nối';
+                msgEl.className = 'msg error';
+            }
+        }
+
+        async function changePassword() {
+            const oldPass = document.getElementById('oldPass').value;
+            const newPass = document.getElementById('newPass').value;
+            const msgEl = document.getElementById('passMsg');
+
+            if (!oldPass || !newPass) {
+                msgEl.innerText = 'Vui lòng nhập đủ thông tin';
+                msgEl.className = 'msg error';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/change_password.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ old_password: oldPass, new_password: newPass })
+                });
+                const data = await res.json();
+
+                if (res.ok && data.status === 'success') {
+                    msgEl.innerText = '✅ Đổi mật khẩu thành công!';
+                    msgEl.className = 'msg success';
+                    document.getElementById('oldPass').value = '';
+                    document.getElementById('newPass').value = '';
+                } else {
+                    msgEl.innerText = '❌ ' + (data.error || 'Lỗi không xác định');
+                    msgEl.className = 'msg error';
+                }
+            } catch (error) {
+                msgEl.innerText = '❌ Lỗi kết nối';
+                msgEl.className = 'msg error';
+            }
+        }
+
+        loadProfile();
+    </script>
+</body>
+
+</html>

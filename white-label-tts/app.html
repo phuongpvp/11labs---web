@@ -1,0 +1,3191 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to Speech</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .app-layout {
+            display: flex;
+            height: calc(100vh - 57px);
+            overflow: hidden;
+        }
+
+        .panel-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+        }
+
+        .panel-right {
+            width: 470px;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .panel-right-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.82rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: .2s;
+        }
+
+        .panel-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .panel-body.hidden {
+            display: none;
+        }
+
+        /* Text area */
+        .text-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .text-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        #ttsText {
+            flex: 1;
+            border: none;
+            border-radius: 0;
+            resize: none;
+            padding: 16px;
+            min-height: 0;
+            background: transparent;
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        #ttsText:focus {
+            box-shadow: none;
+        }
+
+        /* Bottom bar */
+        .bottom-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            border-top: 1px solid var(--border);
+            background: rgba(26, 26, 46, 0.5);
+        }
+
+        .bottom-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Slider */
+        .slider-group {
+            margin-bottom: 20px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .slider-label {
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .slider-value {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .slider-input {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            border: none;
+            padding: 0;
+        }
+
+        .slider-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .slider-hints {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.3);
+            margin-top: 4px;
+        }
+
+        /* Voice dropdown */
+        .voice-selector {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            transition: .2s;
+        }
+
+        .voice-selector:hover {
+            border-color: var(--primary);
+        }
+
+        .voice-selector .name {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .voice-selector .sub {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        /* Voice search modal */
+        .voice-search-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .voice-search-modal.active {
+            display: flex;
+        }
+
+        .voice-search-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 600px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .voice-search-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .voice-search-header input {
+            margin-top: 10px;
+        }
+
+        .voice-search-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .voice-search-item {
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: .15s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .voice-search-item:hover {
+            background: rgba(124, 58, 237, 0.1);
+        }
+
+        .voice-search-item.selected {
+            background: rgba(124, 58, 237, 0.15);
+            border: 1px solid var(--primary);
+        }
+
+        .voice-search-item .info .name {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .voice-search-item .info .labels {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        /* Result panel */
+        .result-section {
+            border-top: 1px solid var(--border);
+            padding: 12px 16px;
+            background: rgba(26, 26, 46, 0.5);
+        }
+
+        /* History — Match main site style */
+        .history-item-sm {
+            background: #000;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            transition: .3s;
+        }
+
+        .history-item-sm:hover {
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+
+        .history-item-sm .h-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.78rem;
+        }
+
+        .history-item-sm .h-id {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .history-item-sm .h-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-item-sm .h-time {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        .h-badge {
+            font-size: 0.72rem;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .h-badge.completed {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+        }
+
+        .h-badge.pending,
+        .h-badge.processing {
+            background: rgba(250, 204, 21, 0.15);
+            color: #facc15;
+        }
+
+        .h-badge.failed {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+
+        .history-item-sm .h-text {
+            color: var(--text);
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .history-item-sm .h-divider {
+            height: 1px;
+            background: #27272a;
+            margin: 12px 0;
+        }
+
+        /* Custom audio player row */
+        .h-player {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .h-play-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: none;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+            transition: .2s;
+        }
+
+        .h-play-btn:hover {
+            background: #7c3aed;
+            transform: scale(1.1);
+        }
+
+        .h-player input[type=range] {
+            flex: 1;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .h-player input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .h-player .h-ptime {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            min-width: 75px;
+            text-align: center;
+        }
+
+        .h-player-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .h-player-actions a,
+        .h-player-actions button {
+            background: transparent;
+            border: 1px solid #333;
+            color: var(--text-muted);
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.8rem;
+            text-decoration: none;
+            transition: .2s;
+        }
+
+        .h-player-actions a:hover,
+        .h-player-actions button:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .h-credit {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .h-credit span {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            .app-layout {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .panel-right {
+                width: 100%;
+                border-top: 1px solid var(--border);
+            }
+
+            .panel-left {
+                border-right: none;
+                min-height: 50vh;
+            }
+        }
+
+        /* Settings Modal */
+        .settings-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .settings-modal.active {
+            display: flex;
+        }
+
+        .settings-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 420px;
+            padding: 28px;
+        }
+
+        .settings-box h3 {
+            margin: 0 0 20px;
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .settings-box .form-group {
+            margin-bottom: 14px;
+        }
+
+        .settings-box label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .settings-box input {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.88rem;
+        }
+
+        .settings-box input:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .settings-box .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .settings-box .btn-row .btn {
+            flex: 1;
+        }
+
+        .settings-msg {
+            font-size: 0.82rem;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 14px;
+            display: none;
+        }
+
+        .settings-msg.error {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            display: block;
+        }
+
+        .settings-msg.success {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+            display: block;
+        }
+
+        .btn-settings {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: .2s;
+        }
+
+        .btn-settings:hover {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* Social Icons */
+        .social-icons-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 15px;
+        }
+
+        .social-icon {
+            font-size: 1rem;
+            color: var(--text-muted);
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            text-decoration: none;
+        }
+
+        .social-icon:hover {
+            transform: translateY(-3px);
+            color: white !important;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .social-icon.zalo {
+            color: #0068FF;
+            background: rgba(0, 104, 255, 0.1);
+            border: 1px solid rgba(0, 104, 255, 0.2);
+        }
+
+        .social-icon.zalo:hover {
+            background: #0068FF;
+            border-color: #0068FF;
+        }
+
+        .social-icon.telegram {
+            color: #24A1DE;
+            background: rgba(36, 161, 222, 0.1);
+            border: 1px solid rgba(36, 161, 222, 0.2);
+        }
+
+        .social-icon.telegram:hover {
+            background: #24A1DE;
+            border-color: #24A1DE;
+        }
+
+        .social-icon.facebook {
+            color: #1877F2;
+            background: rgba(24, 119, 242, 0.1);
+            border: 1px solid rgba(24, 119, 242, 0.2);
+        }
+
+        .social-icon.facebook:hover {
+            background: #1877F2;
+            border-color: #1877F2;
+        }
+
+        .social-icon.youtube {
+            color: #FF0000;
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.2);
+        }
+
+        .social-icon.youtube:hover {
+            background: #FF0000;
+            border-color: #FF0000;
+        }
+
+        /* === Tool Switcher === */
+        .tool-switcher {
+            display: flex;
+            gap: 4px;
+            padding: 6px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 57px;
+            z-index: 50;
+            backdrop-filter: blur(8px);
+        }
+
+        .tool-tab {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+
+        .tool-tab:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+        }
+
+        .tool-tab.active {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--primary);
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+        }
+
+        .tool-section {
+            display: none;
+        }
+
+        .tool-section.active {
+            display: flex;
+        }
+
+        /* === Conversation === */
+        .conv-textarea {
+            width: 100%;
+            height: 280px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            color: white;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .conv-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .conv-textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .hint-box {
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .hint-box code {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--primary);
+        }
+
+        .speaker-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .speaker-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .speaker-label {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .speaker-voice-btn {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: var(--text);
+            font-size: 0.82rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: 0.2s;
+            overflow: hidden;
+        }
+
+        .speaker-voice-btn:hover {
+            border-color: var(--primary);
+            background: rgba(139, 92, 246, 0.08);
+        }
+
+        .speaker-voice-btn .voice-name-text {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .speaker-voice-btn .voice-name-text.placeholder {
+            color: var(--text-muted);
+        }
+
+        .speaker-remove {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 5px;
+            border-radius: 6px;
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+
+        .speaker-remove:hover {
+            color: var(--error);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .add-speaker-btn {
+            width: 100%;
+            padding: 8px;
+            border-radius: 10px;
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: inherit;
+        }
+
+        .add-speaker-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .setting-group {
+            margin-bottom: 14px;
+        }
+
+        .setting-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .setting-value {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .setting-slider {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .setting-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(139, 92, 246, 0.4);
+        }
+
+        .setting-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px;
+        }
+
+        .model-select {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0;
+            font-family: inherit;
+            font-size: 0.85rem;
+        }
+
+        .model-select option {
+            background: #1a1a2e;
+            color: #f4f4f5;
+        }
+
+        .pause-slider-container {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 18px;
+        }
+
+        /* Conv Voice Picker Modal */
+        .conv-voice-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .conv-voice-overlay.active {
+            display: flex;
+        }
+
+        .conv-voice-modal {
+            background: #111118;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 75vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .conv-voice-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .conv-voice-header h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .conv-voice-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: 0.2s;
+        }
+
+        .conv-voice-close:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .conv-voice-search {
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+        }
+
+        .conv-voice-search i {
+            position: absolute;
+            left: 32px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .conv-voice-search input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px 10px 38px;
+            color: white;
+            font-size: 0.85rem;
+            font-family: inherit;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .conv-voice-search input:focus {
+            border-color: var(--primary);
+        }
+
+        .conv-voice-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 20px;
+        }
+
+        .cv-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.15s;
+            margin-bottom: 4px;
+        }
+
+        .cv-item:hover {
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .cv-item.selected {
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .cv-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--primary), #ec4899);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .cv-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .cv-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 2px;
+        }
+
+        .cv-tags {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .cv-tag {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+
+        .cv-preview {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 5px;
+            border-radius: 6px;
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+
+        .cv-preview:hover {
+            color: var(--primary);
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        /* Conv Job Card */
+        .conv-job-card {
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+        }
+
+        /* Conv Tabs (reuse panel-tab style) */
+        .conv-tab {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            font-weight: 600;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .conv-tab:hover {
+            color: var(--text);
+        }
+
+        .conv-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* Conv Panel Right */
+        .conv-panel-right {
+            width: 360px;
+            min-width: 320px;
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .conv-panel-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        @media (max-width: 900px) {
+            .conv-panel-right {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid var(--border);
+                min-width: unset;
+            }
+
+            .tool-section.conv-section {
+                flex-direction: column !important;
+            }
+        }
+
+        /* Promo Modal Glassmorphism */
+        .promo-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .promo-modal.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .promo-content {
+            position: relative;
+            width: 95%;
+            max-width: 700px;
+            background: rgba(24, 24, 27, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transform: scale(0.9);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .promo-modal.show .promo-content {
+            transform: scale(1);
+        }
+
+        .promo-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .promo-close:hover {
+            background: var(--error, #ef4444);
+            transform: rotate(90deg);
+        }
+
+        .promo-image-container {
+            width: 100%;
+            line-height: 0;
+        }
+
+        .promo-image-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .promo-image-container img:hover {
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-brand">
+            <h1 id="siteName">TTS Pro</h1>
+        </div>
+        <div class="header-user">
+            <div class="social-icons-container" id="headerSocialIcons"></div>
+            <span id="userEmail"></span>
+            <span class="quota" id="quotaDisplay">-- ký tự</span>
+            <a href="affiliate.html" class="btn-settings" id="btnAffiliate" style="display:none;text-decoration:none" title="Giới thiệu bạn bè"><i
+                    class="fa-solid fa-gift"></i></a>
+            <button class="btn-settings" onclick="openSettings()" title="Cài đặt tài khoản"><i
+                    class="fa-solid fa-gear"></i></button>
+            <button class="btn-logout" onclick="logout()"><i class="fa-solid fa-sign-out"></i> Thoát</button>
+        </div>
+    </div>
+
+    <!-- Tool Switcher -->
+    <div class="tool-switcher">
+        <button class="tool-tab active" onclick="switchTool('tts')">
+            <i class="fa-solid fa-microphone-lines"></i> Văn bản → Giọng nói
+        </button>
+        <button class="tool-tab" onclick="switchTool('conv')">
+            <i class="fa-solid fa-comments"></i> Hội thoại
+        </button>
+    </div>
+
+    <!-- TTS Section -->
+    <div class="app-layout tool-section active" id="sectionTTS">
+        <!-- LEFT: Text Input -->
+        <div class="panel-left">
+            <div class="text-panel-header">
+                <span><i class="fa-solid fa-pen"></i> NHẬP VĂN BẢN</span>
+            </div>
+            <div class="hint-box" style="margin: 10px 16px; padding: 10px 14px; font-size: 0.78rem;">
+                <i class="fa-solid fa-lightbulb" style="color: #f59e0b; margin-right: 6px;"></i>
+                <b>Mẹo:</b> Sử dụng <code>[laughs]</code> để cười, <code>[whispers]</code> để thì thầm, hoặc <code>...</code> để ngắt nghỉ lâu hơn.
+            </div>
+            <textarea id="ttsText" placeholder="Nhập văn bản của bạn tại đây... (Không giới hạn ký tự)"></textarea>
+
+            <!-- Result (appears after TTS) -->
+            <div class="result-section hidden" id="resultSection">
+                <div id="resultContent"></div>
+            </div>
+
+            <div class="bottom-bar">
+                <div class="bottom-left">
+                    <span>Ký tự <span id="charCount" style="color:var(--primary);font-weight:700;">0</span></span>
+                </div>
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <button class="btn btn-outline btn-sm"
+                        onclick="document.getElementById('ttsText').value='';document.getElementById('charCount').textContent='0';">
+                        <i class="fa-solid fa-eraser"></i> Xóa tất cả
+                    </button>
+                    <button class="btn btn-primary" id="btnConvert" onclick="startTTS()">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Tạo giọng nói
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Settings -->
+        <div class="panel-right">
+            <div class="panel-right-tabs">
+                <button class="panel-tab active" onclick="switchPanel('settings')"><i class="fa-solid fa-gear"></i> Cài
+                    đặt</button>
+                <button class="panel-tab" onclick="switchPanel('history')"><i class="fa-solid fa-clock-rotate-left"></i>
+                    Lịch sử <span id="historyCount" style="opacity:0.5;">0</span></button>
+                <button class="panel-tab" onclick="switchPanel('pricing')"><i class="fa-solid fa-cart-shopping"></i>
+                    Nạp điểm</button>
+            </div>
+
+            <!-- Settings Panel -->
+            <div class="panel-body" id="panelSettings">
+                <!-- Voice -->
+                <div style="font-size:0.78rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;">🎙 Giọng đọc:
+                </div>
+                <div class="voice-selector" onclick="openVoiceSearch()">
+                    <div>
+                        <div class="name" id="selectedVoiceName">Rachel — American female</div>
+                        <div class="sub" id="selectedVoiceId2">21m00Tcm4TlvDq8ikWAM</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down" style="color:var(--text-muted);"></i>
+                </div>
+
+                <!-- Model -->
+                <div style="font-size:0.78rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;">CHỌN MÔ HÌNH
+                </div>
+                <select id="modelSelect" style="margin-bottom:20px;">
+                    <option value="eleven_v3">Eleven v3 (Mới nhất)</option>
+                    <option value="eleven_multilingual_v2" selected>Multilingual v2 </option>
+                    <option value="eleven_turbo_v2_5">Turbo v2.5 </option>
+                    <option value="eleven_flash_v2_5">Flash v2.5 </option>
+                </select>
+
+                <!-- Speed -->
+                <div class="slider-group" id="speedGroup">
+                    <div class="slider-header">
+                        <span class="slider-label">TỐC ĐỘ</span>
+                        <span class="slider-value" id="speedVal">1.0x</span>
+                    </div>
+                    <input type="range" class="slider-input" id="speedSlider" min="0.5" max="2" step="0.1" value="1.0"
+                        oninput="document.getElementById('speedVal').textContent=this.value+'x';localStorage.setItem('voiceSetting_speed',this.value)">
+                    <div class="slider-hints"><span>Chậm hơn</span><span>Nhanh hơn</span></div>
+                </div>
+
+                <!-- Stability -->
+                <div class="slider-group" id="stabilityGroup">
+                    <div class="slider-header">
+                        <span class="slider-label" id="stabilityLabel">SỰ ỔN ĐỊNH</span>
+                        <span class="slider-value" id="stabilityVal">50%</span>
+                    </div>
+                    <input type="range" class="slider-input" id="stabilitySlider" min="0" max="100" step="1" value="50"
+                        oninput="updateStabilityVal(this.value);localStorage.setItem('voiceSetting_stability',this.value)">
+                    <div class="slider-hints" id="stabilityHints"><span>Biến đổi nhiều hơn</span><span>Ổn định hơn</span></div>
+                </div>
+
+                <!-- Similarity -->
+                <div class="slider-group" id="similarityGroup">
+                    <div class="slider-header">
+                        <span class="slider-label">SỰ TƯƠNG ĐỒNG</span>
+                        <span class="slider-value" id="similarityVal">75%</span>
+                    </div>
+                    <input type="range" class="slider-input" id="similaritySlider" min="0" max="100" step="1" value="75"
+                        oninput="document.getElementById('similarityVal').textContent=this.value+'%';localStorage.setItem('voiceSetting_similarity',this.value)">
+                    <div class="slider-hints"><span>Thấp</span><span>Cao</span></div>
+                </div>
+            </div>
+
+            <!-- Pricing Panel -->
+            <div class="panel-body hidden" id="panelPricing" style="padding:16px;">
+                <div style="font-size:1rem;font-weight:700;margin-bottom:6px;"><i class="fa-solid fa-tags"></i> Gói dịch
+                    vụ</div>
+                <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:16px;">Chọn gói phù hợp với nhu cầu
+                    của bạn</div>
+                <div id="plansList" style="display:flex;flex-direction:column;gap:12px;">
+                    <div style="text-align:center;color:var(--text-muted);padding:30px;"><i
+                            class="fa-solid fa-spinner fa-spin"></i> Đang tải...</div>
+                </div>
+                <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px;">
+                    <div style="font-size:0.88rem;font-weight:700;margin-bottom:10px;"><i
+                            class="fa-solid fa-clock-rotate-left"></i> Đơn của bạn</div>
+                    <div id="myOrdersList" style="font-size:0.8rem;"></div>
+                </div>
+            </div>
+
+            <!-- History Panel -->
+            <div class="panel-body hidden" id="panelHistory" style="padding:16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <div style="font-size:1rem;font-weight:700;"><i class="fa-solid fa-bars-staggered"></i> Lịch sử tạo
+                        Voice</div>
+                    <button class="btn btn-sm" onclick="clearHistory()"
+                        style="background:transparent;border:1px solid rgba(239,68,68,0.3);color:#f87171;font-size:0.72rem;">
+                        <i class="fa-solid fa-trash"></i> Xóa tất cả
+                    </button>
+                </div>
+                <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:12px;">
+                    <i class="fa-solid fa-circle-info"></i> Các tác vụ sẽ được tự động xóa sau 24 giờ.
+                </div>
+                <div id="historyList">
+                    <div style="text-align:center;color:var(--text-muted);padding:40px 20px;">
+                        <i class="fa-solid fa-clock-rotate-left"
+                            style="font-size:2rem;opacity:0.2;display:block;margin-bottom:12px;"></i>
+                        Chưa có lịch sử
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conversation Section -->
+    <div class="tool-section conv-section" id="sectionConv"
+        style="height:calc(100vh - 57px - 46px); flex-direction:row;">
+        <!-- LEFT: Conversation Editor -->
+        <div class="conv-panel-left">
+            <div style="margin-bottom:10px;">
+                <h2
+                    style="font-size:1.4rem;font-weight:800;background:linear-gradient(to right,#fff,#8b5cf6,#ec4899);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;">
+                    Hội thoại AI</h2>
+                <p style="color:var(--text-muted);font-size:0.82rem;">Tạo đoạn hội thoại với nhiều giọng nói khác nhau
+                </p>
+            </div>
+            <div class="hint-box" style="margin-bottom:12px;">
+                <strong style="color:var(--text);">💡 Cách sử dụng:</strong><br>
+                Mỗi dòng bắt đầu bằng ký hiệu người nói:<br>
+                <code>A&gt;</code> Xin chào, hôm nay bạn thế nào?<br>
+                <code>B&gt;</code> Mình khỏe, cảm ơn bạn!<br>
+                <code>A&gt;</code> Tuyệt vời!
+                <div style="margin-top:8px; border-top: 1px solid rgba(255,255,255,0.05); padding-top:8px; font-size:0.75rem;">
+                    <b>Mẹo:</b> Sử dụng <code>[laughs]</code> để cười, <code>[whispers]</code> để thì thầm, hoặc <code>...</code> để ngắt nghỉ lâu hơn.
+                </div>
+            </div>
+            <textarea id="convText" class="conv-textarea" style="flex:1;"
+                placeholder="A> Xin chào, hôm nay bạn thế nào?&#10;B> Mình khỏe, cảm ơn bạn!&#10;A> Tuyệt vời!"></textarea>
+            <div
+                style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;margin-bottom:8px;">
+                <span style="font-size:0.78rem;color:var(--text-muted);"><span id="convCharCount">0</span> ký tự · <span
+                        id="convLineCount">0</span> dòng</span>
+                <span style="font-size:0.78rem;color:var(--text-muted);">Phí: <span id="convEstCost"
+                        style="color:white;font-weight:700;">0</span> ký tự</span>
+            </div>
+            <button class="btn btn-primary" id="btnConvGenerate" onclick="handleConvGenerate()" disabled
+                style="padding:10px 20px;border-radius:100px;font-size:0.88rem;">
+                <i class="fa-solid fa-comments"></i> Tạo giọng nói
+            </button>
+
+            <!-- Conv result -->
+            <div id="convResultSection" style="display:none;margin-top:12px;"></div>
+        </div>
+
+        <!-- RIGHT: Tabs + Panels -->
+        <div class="conv-panel-right">
+            <div class="panel-right-tabs">
+                <button class="conv-tab active" onclick="switchConvPanel('settings')"><i class="fa-solid fa-gear"></i>
+                    Cài đặt</button>
+                <button class="conv-tab" onclick="switchConvPanel('history')"><i
+                        class="fa-solid fa-clock-rotate-left"></i> Lịch sử <span id="convHistoryCount"
+                        style="opacity:0.5;">0</span></button>
+            </div>
+
+            <!-- Conv Settings Panel -->
+            <div class="panel-body" id="convPanelSettings">
+                <!-- Speaker Assignments -->
+                <div style="margin-bottom:14px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                        <i class="fa-solid fa-users" style="color:var(--primary);"></i>
+                        <span style="font-weight:700;font-size:0.9rem;">Người nói</span>
+                    </div>
+                    <div id="convSpeakersList"></div>
+                    <button class="add-speaker-btn" onclick="convAddSpeaker()">
+                        <i class="fa-solid fa-plus"></i> Thêm người nói
+                    </button>
+                </div>
+
+                <!-- Model Selector -->
+                <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:14px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                        <i class="fa-solid fa-cube" style="color:var(--text-muted);"></i>
+                        <span style="font-weight:600;font-size:0.85rem;">Mô hình</span>
+                        <span id="convModelCostBadge"
+                            style="font-size:0.7rem;padding:2px 8px;border-radius:4px;background:rgba(255,255,255,0.1);color:var(--text-muted);font-weight:700;margin-left:auto;">1đ/ký
+                            tự</span>
+                    </div>
+                    <div class="setting-box">
+                        <select id="convModelSelect" class="model-select" onchange="convUpdateModelCost()">
+                            <option value="eleven_v3">Eleven v3 (Alpha)</option>
+                            <option value="eleven_multilingual_v2">Multilingual v2.5</option>
+                            <option value="eleven_turbo_v2_5">Turbo v2.5</option>
+                            <option value="eleven_flash_v2_5" selected>Flash v2.5 (Nhanh)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:14px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                        <i class="fa-solid fa-sliders" style="color:var(--text-muted);"></i>
+                        <span style="font-weight:600;font-size:0.85rem;">Cài đặt giọng</span>
+                    </div>
+                    <div class="setting-group">
+                        <div class="setting-label"><span>Tốc độ</span><span class="setting-value"
+                                id="convSpeedVal">1.00</span></div>
+                        <input type="range" class="setting-slider" id="convSpeedSlider" min="0.5" max="2" step="0.05"
+                            value="1"
+                            oninput="document.getElementById('convSpeedVal').textContent=parseFloat(this.value).toFixed(2)">
+                    </div>
+                    <div class="setting-group">
+                        <div class="setting-label"><span>Độ ổn định</span><span class="setting-value"
+                                id="convStabilityVal">50%</span></div>
+                        <input type="range" class="setting-slider" id="convStabilitySlider" min="0" max="100" step="1"
+                            value="50" oninput="document.getElementById('convStabilityVal').textContent=this.value+'%'">
+                    </div>
+                    <div class="setting-group">
+                        <div class="setting-label"><span>Độ tương đồng</span><span class="setting-value"
+                                id="convSimilarityVal">75%</span></div>
+                        <input type="range" class="setting-slider" id="convSimilaritySlider" min="0" max="100" step="1"
+                            value="75"
+                            oninput="document.getElementById('convSimilarityVal').textContent=this.value+'%'">
+                    </div>
+                    <div class="pause-slider-container">
+                        <div class="setting-label"><span>Khoảng nghỉ</span><span class="setting-value"
+                                id="convPauseVal">0.5s</span></div>
+                        <input type="range" class="setting-slider" id="convPauseSlider" min="0" max="3" step="0.1"
+                            value="0.5"
+                            oninput="document.getElementById('convPauseVal').textContent=parseFloat(this.value).toFixed(1)+'s'">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conv History Panel -->
+            <div class="panel-body hidden" id="convPanelHistory" style="flex:1;overflow-y:auto;">
+                <div id="convJobsList">
+                    <div style="text-align:center;color:var(--text-muted);padding:40px 20px;">
+                        <i class="fa-solid fa-clock-rotate-left"
+                            style="font-size:2rem;opacity:0.2;display:block;margin-bottom:12px;"></i>
+                        Chưa có lịch sử
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conv Voice Picker Modal -->
+    <div class="conv-voice-overlay" id="convVoiceOverlay" onclick="if(event.target===this)convCloseVoiceModal()">
+        <div class="conv-voice-modal">
+            <div class="conv-voice-header">
+                <h3><i class="fa-solid fa-microphone-lines" style="color:var(--primary);margin-right:8px;"></i>Chọn
+                    giọng cho <span id="convVoiceModalSpeaker">A</span></h3>
+                <button class="conv-voice-close" onclick="convCloseVoiceModal()"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="conv-voice-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="convVoiceSearchInput" placeholder="Tìm kiếm theo tên giọng nói..."
+                    oninput="convFilterVoices()">
+            </div>
+            <div class="conv-voice-body" id="convVoiceBody">
+                <div style="text-align:center;padding:30px;color:var(--text-muted);"><i
+                        class="fa-solid fa-spinner fa-spin"></i> Đang tải...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings / Change Password Modal -->
+    <div class="settings-modal" id="settingsModal" onclick="if(event.target===this)closeSettings()">
+        <div class="settings-box">
+            <h3><i class="fa-solid fa-key" style="color:var(--primary);"></i> Đổi mật khẩu</h3>
+            <div class="settings-msg" id="settingsMsg"></div>
+            <div class="form-group">
+                <label>Mật khẩu hiện tại</label>
+                <input type="password" id="oldPassword" placeholder="Nhập mật khẩu cũ">
+            </div>
+            <div class="form-group">
+                <label>Mật khẩu mới</label>
+                <input type="password" id="newPassword" placeholder="Tối thiểu 6 ký tự">
+            </div>
+            <div class="form-group">
+                <label>Xác nhận mật khẩu mới</label>
+                <input type="password" id="confirmPassword" placeholder="Nhập lại mật khẩu mới">
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-outline" onclick="closeSettings()">Hủy</button>
+                <button class="btn btn-primary" id="btnChangePass" onclick="changePassword()"><i
+                        class="fa-solid fa-check"></i> Xác nhận</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Voice Search Modal -->
+    <div class="voice-search-modal" id="voiceModal" onclick="if(event.target===this)closeVoiceSearch()">
+        <div class="voice-search-box">
+            <div class="voice-search-header">
+                <div class="flex-between">
+                    <span style="font-weight:700;">Chọn giọng đọc</span>
+                    <button class="btn btn-sm btn-outline" onclick="closeVoiceSearch()"><i
+                            class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div style="display:flex;gap:0;margin:10px 0 6px;border-bottom:1px solid var(--border);">
+                    <button class="voice-tab active" id="tabAll" onclick="setVoiceTab('all')"
+                        style="flex:1;padding:8px 0;background:none;border:none;color:var(--text);font-weight:600;font-size:0.85rem;cursor:pointer;border-bottom:2px solid var(--primary);transition:.2s;">Thư
+                        viện giọng nói</button>
+                    <button class="voice-tab" id="tabFav" onclick="setVoiceTab('favorites')"
+                        style="flex:1;padding:8px 0;background:none;border:none;color:var(--text-muted);font-weight:600;font-size:0.85rem;cursor:pointer;border-bottom:2px solid transparent;transition:.2s;">Yêu
+                        thích</button>
+                </div>
+                <input type="text" id="voiceSearchInput" placeholder="🔍 Tìm theo tên hoặc voice ID...">
+            </div>
+            <div class="voice-search-list" id="voiceSearchList">
+                <div style="text-align:center;padding:30px;color:var(--text-muted);">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Đang tải...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = 'api';
+        const token = localStorage.getItem('customer_token');
+        let voices = [];
+        let selectedVoiceId = '21m00Tcm4TlvDq8ikWAM';
+        let favoriteVoices = [];
+        let voiceTab = 'all';
+        let currentPreviewAudio = null;
+        let displayedVoices = [];
+        let EXT_API = '';
+        let EXT_KEY = '';
+
+        if (!token) window.location.href = 'index.html';
+
+        (async () => {
+            await loadConfig();
+            loadProfile();
+            loadVoices();
+            loadHistory();
+            // Restore saved model
+            const savedModel = localStorage.getItem('selectedModel');
+            if (savedModel) {
+                const modelEl = document.getElementById('modelSelect');
+                if ([...modelEl.options].some(o => o.value === savedModel)) {
+                    modelEl.value = savedModel;
+                }
+            }
+            onModelChange(); // init slider visibility
+
+            // Restore saved voice settings from localStorage
+            ['speed', 'stability', 'similarity'].forEach(s => {
+                const saved = localStorage.getItem(`voiceSetting_${s}`);
+                if (saved !== null) {
+                    const slider = document.getElementById(`${s}Slider`);
+                    const val = document.getElementById(`${s}Val`);
+                    if (slider) { slider.value = saved; }
+                    if (val && s === 'speed') val.textContent = saved + 'x';
+                    else if (val && s !== 'speed') val.textContent = saved + '%';
+                }
+            });
+        })();
+
+        // Toggle sliders based on model selection
+        function onModelChange() {
+            const model = document.getElementById('modelSelect').value;
+            const isV3 = model === 'eleven_v3';
+            document.getElementById('speedGroup').style.display = isV3 ? 'none' : '';
+            document.getElementById('similarityGroup').style.display = isV3 ? 'none' : '';
+            document.getElementById('stabilityLabel').textContent = isV3 ? 'ĐỘ ỔN ĐỊNH' : 'SỰ ỔN ĐỊNH';
+            document.getElementById('stabilityHints').innerHTML = isV3
+                ? '<span>Mạnh mẽ</span><span>Ổn định hơn</span>'
+                : '<span>Biến đổi nhiều hơn</span><span>Ổn định hơn</span>';
+            updateStabilityVal(document.getElementById('stabilitySlider').value);
+        }
+        function updateStabilityVal(val) {
+            const model = document.getElementById('modelSelect').value;
+            const isV3 = model === 'eleven_v3';
+            document.getElementById('stabilityVal').textContent = isV3 ? 'Sáng tạo' : val + '%';
+        }
+        document.getElementById('modelSelect').addEventListener('change', function() {
+            localStorage.setItem('selectedModel', this.value);
+            onModelChange();
+        });
+
+        async function loadConfig() {
+            try {
+                const res = await fetch(`${API}/get_config.php`);
+                const data = await res.json();
+                if (data.status === 'success') {
+                    EXT_API = data.api_base;
+                    EXT_KEY = data.api_key;
+                    const nameEl = document.getElementById('siteName');
+                    if (data.site_logo) {
+                        nameEl.innerHTML = `<img src="${data.site_logo}" alt="Logo" style="height:36px;vertical-align:middle;margin-right:10px;filter:brightness(0) invert(1);"> ${data.site_name || 'TTS Pro'}`;
+                    } else if (data.site_name) {
+                        nameEl.textContent = data.site_name;
+                    }
+
+                    // Store popup config for later
+                    window._promoConfig = data;
+
+                    // Load social icons
+                    loadSocialIcons(data);
+
+                    // Show affiliate button if enabled
+                    if (data.affiliate_enabled) {
+                        const affBtn = document.getElementById('btnAffiliate');
+                        if (affBtn) affBtn.style.display = '';
+                    }
+                }
+            } catch (e) { }
+        }
+
+        function loadSocialIcons(data) {
+            const container = document.getElementById('headerSocialIcons');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const icons = [
+                { key: 'social_zalo', cls: 'zalo', icon: 'fa-solid fa-comment-dots', name: 'Zalo' },
+                { key: 'social_telegram', cls: 'telegram', icon: 'fa-brands fa-telegram', name: 'Telegram' },
+                { key: 'social_facebook', cls: 'facebook', icon: 'fa-brands fa-facebook', name: 'Facebook' },
+                { key: 'social_youtube', cls: 'youtube', icon: 'fa-brands fa-youtube', name: 'YouTube' }
+            ];
+
+            icons.forEach(s => {
+                if (data[s.key]) {
+                    const a = document.createElement('a');
+                    a.href = data[s.key];
+                    a.target = '_blank';
+                    a.className = `social-icon ${s.cls}`;
+                    a.title = s.name;
+                    a.innerHTML = `<i class="${s.icon}"></i>`;
+                    container.appendChild(a);
+                }
+            });
+        }
+
+        // Promo Popup Logic
+        function checkPromo() {
+            const data = window._promoConfig;
+            if (!data || !data.popup_enabled || !data.popup_image) return;
+
+            // Frequency check
+            const freq = data.popup_frequency || 'once_per_day';
+            if (freq === 'once_per_day') {
+                const lastShown = localStorage.getItem('wl_last_promo_shown');
+                const now = new Date().getTime();
+                const oneDay = 24 * 60 * 60 * 1000;
+                if (lastShown && (now - lastShown < oneDay)) return;
+            }
+
+            const container = document.getElementById('promoContainer');
+            if (!container) return;
+
+            let html = `<img src="${data.popup_image}" alt="Promotion">`;
+            if (data.popup_link) {
+                html = `<a href="${data.popup_link}" target="_blank">${html}</a>`;
+            }
+            container.innerHTML = html;
+
+            const modal = document.getElementById('promoModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 100);
+
+            if (freq === 'once_per_day') {
+                localStorage.setItem('wl_last_promo_shown', new Date().getTime());
+            }
+        }
+
+        function closePromo() {
+            const modal = document.getElementById('promoModal');
+            modal.classList.remove('show');
+            setTimeout(() => { modal.style.display = 'none'; }, 400);
+        }
+
+        // Show popup 3s after page load
+        setTimeout(checkPromo, 3000);
+
+        // ─── Text counter ───
+        document.getElementById('ttsText').addEventListener('input', function () {
+            document.getElementById('charCount').textContent = this.value.length.toLocaleString('vi-VN');
+        });
+
+        // ─── Profile ───
+        async function loadProfile() {
+            try {
+                const res = await fetch(`${API}/auth.php?action=profile`, { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    document.getElementById('userEmail').textContent = data.user.email;
+                    document.getElementById('quotaDisplay').textContent = `${data.user.remaining.toLocaleString('vi-VN')} / ${data.user.quota_allocated.toLocaleString('vi-VN')} ký tự`;
+                } else if (res.status === 401) { logout(); }
+            } catch (e) { }
+        }
+
+        // ─── Panels ───
+        function switchPanel(name) {
+            document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('panelSettings').classList.toggle('hidden', name !== 'settings');
+            document.getElementById('panelHistory').classList.toggle('hidden', name !== 'history');
+            document.getElementById('panelPricing').classList.toggle('hidden', name !== 'pricing');
+            const tabs = document.querySelectorAll('.panel-tab');
+            const idxMap = { 'settings': 0, 'history': 1, 'pricing': 2 };
+            const idx = idxMap[name] ?? 0;
+            if (tabs[idx]) tabs[idx].classList.add('active');
+            if (name === 'pricing') loadPublicPlans();
+        }
+
+        // ─── Voices ───
+        async function loadVoices() {
+            try {
+                const res = await fetch(`${EXT_API}/voices.php?api_key=${EXT_KEY}`);
+                const data = await res.json();
+                voices = data.voices || [];
+            } catch (e) { }
+        }
+
+        function getFavKey() {
+            const email = document.getElementById('userEmail')?.textContent || 'anon';
+            return `favVoices_${email}`;
+        }
+        function loadFavorites() {
+            try { favoriteVoices = JSON.parse(localStorage.getItem(getFavKey()) || '[]'); } catch (e) { favoriteVoices = []; }
+        }
+        function saveFavorites() {
+            localStorage.setItem(getFavKey(), JSON.stringify(favoriteVoices));
+        }
+        function toggleFavorite(voiceId, event) {
+            event.stopPropagation();
+            const idx = favoriteVoices.findIndex(v => v.voice_id === voiceId);
+            if (idx === -1) {
+                const v = displayedVoices.find(v => v.voice_id === voiceId) || voices.find(v => v.voice_id === voiceId);
+                if (v) favoriteVoices.push(v);
+            } else {
+                favoriteVoices.splice(idx, 1);
+            }
+            saveFavorites();
+            renderVoiceList(voiceTab === 'favorites' ? favoriteVoices : voices);
+        }
+        function setVoiceTab(tab) {
+            voiceTab = tab;
+            const tabAll = document.getElementById('tabAll');
+            const tabFav = document.getElementById('tabFav');
+            tabAll.style.borderBottomColor = tab === 'all' ? 'var(--primary)' : 'transparent';
+            tabAll.style.color = tab === 'all' ? 'var(--text)' : 'var(--text-muted)';
+            tabFav.style.borderBottomColor = tab === 'favorites' ? 'var(--primary)' : 'transparent';
+            tabFav.style.color = tab === 'favorites' ? 'var(--text)' : 'var(--text-muted)';
+            document.getElementById('voiceSearchInput').value = '';
+            renderVoiceList(tab === 'favorites' ? favoriteVoices : voices);
+        }
+
+        async function openVoiceSearch() {
+            document.getElementById('voiceModal').classList.add('active');
+            document.getElementById('voiceSearchInput').value = '';
+            loadFavorites();
+            voiceTab = 'all';
+            if (voices.length === 0) {
+                document.getElementById('voiceSearchList').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</div>';
+                await loadVoices();
+            }
+            setVoiceTab('all');
+            document.getElementById('voiceSearchInput').focus();
+        }
+        function closeVoiceSearch() {
+            document.getElementById('voiceModal').classList.remove('active');
+            if (currentPreviewAudio) { currentPreviewAudio.pause(); currentPreviewAudio = null; }
+        }
+
+        function playPreview(url, btn, event) {
+            event.stopPropagation();
+            if (currentPreviewAudio) { currentPreviewAudio.pause(); currentPreviewAudio = null; }
+            document.querySelectorAll('.btn-play-preview').forEach(b => { b.querySelector('i').className = 'fa-solid fa-play'; });
+            const audio = new Audio(url);
+            currentPreviewAudio = audio;
+            btn.querySelector('i').className = 'fa-solid fa-pause';
+            audio.play();
+            audio.onended = () => { btn.querySelector('i').className = 'fa-solid fa-play'; currentPreviewAudio = null; };
+        }
+
+        function renderVoiceList(list) {
+            const el = document.getElementById('voiceSearchList');
+            if (!list.length) {
+                const msg = voiceTab === 'favorites' ? 'Chưa có giọng yêu thích nào' : 'Không tìm thấy';
+                el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-muted);">${msg}</div>`;
+                return;
+            }
+            displayedVoices = list;
+            el.innerHTML = list.map(v => {
+                const labels = v.labels || {};
+                const accent = labels.accent || '';
+                const gender = labels.gender || '';
+                const age = labels.age || '';
+                const desc = v.description || '';
+                const info = [accent, gender, age].filter(Boolean).join(' · ');
+                const isFav = favoriteVoices.some(fv => fv.voice_id === v.voice_id);
+                const escapedName = v.name.replace(/'/g, "\\'");
+                const escapedInfo = info.replace(/'/g, "\\'");
+                return `<div class="voice-search-item ${v.voice_id === selectedVoiceId ? 'selected' : ''}" onclick="pickVoice('${v.voice_id}', '${escapedName}', '${escapedInfo}')">
+                    <div class="info" style="flex:1;min-width:0;">
+                        <div class="name">${v.name}</div>
+                        <div class="labels">${info || v.voice_id}</div>
+                        ${desc ? `<div style="font-size:0.72rem;color:var(--text-muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${desc.substring(0, 80)}${desc.length > 80 ? '...' : ''}</div>` : ''}
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                        <button class="btn btn-sm" onclick="toggleFavorite('${v.voice_id}', event)" style="background:none;border:none;padding:4px 6px;cursor:pointer;font-size:1rem;" title="Yêu thích">
+                            <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart" style="color:${isFav ? '#ef4444' : 'var(--text-muted)'}"></i>
+                        </button>
+                        ${v.preview_url ? `<button class="btn btn-sm btn-outline btn-play-preview" onclick="playPreview('${v.preview_url}', this, event)" style="width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-play"></i></button>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function pickVoice(id, name, info) {
+            selectedVoiceId = id;
+            document.getElementById('selectedVoiceName').textContent = name + (info ? ' — ' + info : '');
+            document.getElementById('selectedVoiceId2').textContent = id;
+            closeVoiceSearch();
+        }
+
+        // Voice search (server-side)
+        let searchTimer = null;
+        document.getElementById('voiceSearchInput').addEventListener('input', function () {
+            const q = this.value.trim();
+            clearTimeout(searchTimer);
+            if (voiceTab === 'favorites') {
+                // Filter favorites locally
+                if (!q) { renderVoiceList(favoriteVoices); return; }
+                const filtered = favoriteVoices.filter(v => v.name.toLowerCase().includes(q.toLowerCase()) || v.voice_id.includes(q));
+                renderVoiceList(filtered);
+                return;
+            }
+            if (!q) { renderVoiceList(voices); return; }
+            searchTimer = setTimeout(async () => {
+                document.getElementById('voiceSearchList').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Đang tìm...</div>';
+                try {
+                    const res = await fetch(`${EXT_API}/voices.php?api_key=${EXT_KEY}&q=${encodeURIComponent(q)}`);
+                    const data = await res.json();
+                    renderVoiceList(data.voices || []);
+                } catch (e) { renderVoiceList([]); }
+            }, 400);
+        });
+
+        // ─── TTS ───
+        async function startTTS() {
+            const text = document.getElementById('ttsText').value.trim();
+            if (!text) return alert('Vui lòng nhập văn bản');
+
+            const btn = document.getElementById('btnConvert');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-sm"></span> Đang xử lý...';
+
+            try {
+                const checkRes = await fetch(`${API}/proxy_tts.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ action: 'check_quota', characters: text.length })
+                });
+                const checkData = await checkRes.json();
+                if (checkData.error) {
+                    alert(checkData.error);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Tạo giọng nói';
+                    return;
+                }
+
+                const voiceSettings = {
+                    stability: parseInt(document.getElementById('stabilitySlider').value) / 100,
+                    similarity_boost: parseInt(document.getElementById('similaritySlider').value) / 100,
+                    speed: parseFloat(document.getElementById('speedSlider').value)
+                };
+
+                const ttsRes = await fetch(`${EXT_API}/tts.php?api_key=${EXT_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text, voice_id: selectedVoiceId,
+                        model_id: document.getElementById('modelSelect').value,
+                        voice_settings: voiceSettings
+                    })
+                });
+                const ttsData = await ttsRes.json();
+
+                if (ttsData.job_id) {
+                    await fetch(`${API}/proxy_tts.php`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({
+                            action: 'deduct_quota', characters: text.length, job_id: ttsData.job_id,
+                            text_preview: text.substring(0, 100), voice_id: selectedVoiceId,
+                            model_id: document.getElementById('modelSelect').value
+                        })
+                    });
+                    showResult(ttsData.job_id);
+                    loadProfile();
+                } else {
+                    alert(ttsData.error || 'Lỗi tạo TTS');
+                }
+            } catch (e) {
+                alert('Lỗi: ' + e.message);
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Tạo giọng nói';
+        }
+
+        function showResult(jobId) {
+            const section = document.getElementById('resultSection');
+            const content = document.getElementById('resultContent');
+            section.classList.remove('hidden');
+            content.innerHTML = `
+                <div style="padding:16px;background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);border-radius:12px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                        <span style="font-size:0.85rem;font-weight:600;color:var(--text-muted);">
+                            <i class="fa-solid fa-spinner fa-spin" style="color:var(--primary);"></i> Đang xử lý...
+                        </span>
+                        <span id="progressPct-${jobId}" style="font-size:0.82rem;font-weight:700;color:var(--primary);">0%</span>
+                    </div>
+                    <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:999px;overflow:hidden;">
+                        <div id="progressBar-${jobId}" style="height:100%;width:0%;background:linear-gradient(90deg,var(--primary),#8b5cf6);border-radius:999px;transition:width 0.5s ease;"></div>
+                    </div>
+                </div>`;
+            // Auto-switch to History tab
+            switchPanel('history');
+            loadHistory();
+            pollJobStatus(jobId);
+        }
+
+        async function pollJobStatus(jobId) {
+            const content = document.getElementById('resultContent');
+            let attempts = 0;
+            const poll = async () => {
+                attempts++;
+                try {
+                    const res = await fetch(`${EXT_API}/status.php?api_key=${EXT_KEY}&job_id=${jobId}`);
+                    const data = await res.json();
+
+                    // Update progress bar if data available
+                    const totalChunks = parseInt(data.total_chunks) || 0;
+                    const processedChunks = parseInt(data.processed_chunks) || 0;
+                    const bar = document.getElementById(`progressBar-${jobId}`);
+                    const pct = document.getElementById(`progressPct-${jobId}`);
+
+                    if (data.status !== 'completed' && !data.status?.startsWith?.('failed')) {
+                        let percent = 0;
+                        if (totalChunks > 0) {
+                            percent = Math.min(Math.round((processedChunks / totalChunks) * 100), 95);
+                        } else if (data.status === 'processing') {
+                            percent = 5;
+                        }
+                        if (bar) bar.style.width = `${percent}%`;
+                        if (pct) pct.textContent = `${percent}%`;
+
+                        // Update status text
+                        const statusSpan = content.querySelector('span[style*="font-weight:600"]');
+                        if (statusSpan) {
+                            if (data.status === 'pending') {
+                                statusSpan.innerHTML = '<i class="fa-solid fa-clock" style="color:#3498db;"></i> Chờ xử lý...';
+                            } else if (totalChunks > 0) {
+                                statusSpan.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="color:var(--primary);"></i> Đang xử lý ${percent}%`;
+                            }
+                        }
+                    }
+
+                    if (data.status === 'completed' && data.download_url) {
+                        if (bar) bar.style.width = '100%';
+                        if (pct) pct.textContent = '100%';
+                        // Browser downloads audio via CORS proxy, then uploads to local host
+                        content.innerHTML = `<div style="text-align:center;padding:12px;"><i class="fa-solid fa-spinner fa-spin" style="color:var(--primary);"></i> Đang lưu audio...</div>`;
+                        let audioUrl = data.download_url;
+                        try {
+                            // Use PHP proxy on main server to bypass CORS
+                            const mp3File = data.download_url.split('/').pop();
+                            const proxyUrl = EXT_API.replace('/external/v1', '/results/download.php') + '?file=' + mp3File;
+                            const audioRes = await fetch(proxyUrl);
+                            if (!audioRes.ok) throw new Error('Download failed: HTTP ' + audioRes.status);
+                            const audioBlob = await audioRes.blob();
+                            if (audioBlob.size < 1000) throw new Error('Audio file too small: ' + audioBlob.size + ' bytes');
+
+                            // Step 2: Upload blob to local PHP
+                            const formData = new FormData();
+                            formData.append('audio', audioBlob, jobId + '.mp3');
+                            formData.append('job_id', jobId);
+
+                            const saveRes = await fetch(`${API}/save_audio.php`, {
+                                method: 'POST',
+                                headers: { 'Authorization': 'Bearer ' + token },
+                                body: formData
+                            });
+                            const saveData = await saveRes.json();
+                            if (saveData.status === 'success' && saveData.local_url) {
+                                audioUrl = saveData.local_url;
+                                console.log('Audio saved locally:', audioUrl);
+                            }
+                        } catch (e) {
+                            console.warn('Local save failed, using remote URL:', e);
+                        }
+
+                        // Always update local DB & show result (even if download failed)
+                        try {
+                            await fetch(`${API}/proxy_tts.php`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ action: 'update_status', job_id: jobId, status: 'completed', result_file: audioUrl }) });
+                        } catch (e) { console.warn('update_status failed:', e); }
+                        content.innerHTML = `
+                            <div class="audio-player-row">
+                                <button class="player-btn" onclick="togglePlay(this)"><i class="fa-solid fa-play"></i></button>
+                                <input type="range" class="player-slider" id="resultSeek" value="0" min="0" step="0.1">
+                                <div class="player-time" id="resultTime">0:00 / 0:00</div>
+                                <a href="${audioUrl}" download class="btn btn-sm btn-success"><i class="fa-solid fa-download"></i></a>
+                            </div>
+                            <audio id="resultAudio" preload="auto" src="${audioUrl}"></audio>`;
+                        setupResultPlayer();
+                        await loadHistory();
+                        loadProfile();
+                        return;
+                    }
+                    if (data.status === 'failed' || data.status?.startsWith?.('failed')) {
+                        const errMsg = data.error_message || 'Đã xảy ra lỗi khi xử lý';
+                        fetch(`${API}/proxy_tts.php`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ action: 'update_status', job_id: jobId, status: 'failed', error_message: errMsg }) });
+                        content.innerHTML = `<div style="color:var(--error);text-align:center;padding:12px;"><i class="fa-solid fa-circle-xmark"></i> ${errMsg}</div>`;
+                        loadHistory();
+                        return;
+                    }
+                    if (attempts < 60) setTimeout(poll, 5000);
+                } catch (e) { if (attempts < 60) setTimeout(poll, 5000); }
+            };
+            setTimeout(poll, 3000);
+        }
+
+        // ─── Player ───
+        function setupResultPlayer() {
+            const audio = document.getElementById('resultAudio');
+            const seek = document.getElementById('resultSeek');
+            const time = document.getElementById('resultTime');
+            if (!audio) return;
+            audio.onloadedmetadata = () => { if (isFinite(audio.duration)) { seek.max = audio.duration; time.textContent = `0:00 / ${fmtTime(audio.duration)}`; } };
+            audio.ontimeupdate = () => { if (!audio._seeking) seek.value = audio.currentTime; time.textContent = `${fmtTime(audio.currentTime)} / ${fmtTime(audio.duration)}`; };
+            seek.oninput = () => { audio._seeking = true; };
+            seek.onchange = () => { audio.currentTime = parseFloat(seek.value); audio._seeking = false; };
+        }
+        function togglePlay(btn) {
+            const audio = document.getElementById('resultAudio');
+            if (!audio) return;
+            if (audio.paused) { audio.play(); btn.querySelector('i').className = 'fa-solid fa-pause'; }
+            else { audio.pause(); btn.querySelector('i').className = 'fa-solid fa-play'; }
+            audio.onended = () => { btn.querySelector('i').className = 'fa-solid fa-play'; };
+        }
+        function fmtTime(s) { if (!s || !isFinite(s)) return '0:00'; return Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0'); }
+
+        // ─── History ───
+        async function loadHistory() {
+            try {
+                const res = await fetch(`${API}/history.php`, { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    document.getElementById('historyCount').textContent = data.history.length;
+                    renderHistory(data.history);
+                }
+            } catch (e) { }
+        }
+        function renderHistory(items) {
+            const list = document.getElementById('historyList');
+            // Clear old history polls
+            if (window._historyPolls) {
+                window._historyPolls.forEach(t => clearInterval(t));
+            }
+            window._historyPolls = [];
+
+            if (!items.length) { list.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px 20px;"><i class="fa-solid fa-clock-rotate-left" style="font-size:2rem;opacity:0.2;display:block;margin-bottom:12px;"></i>Chưa có lịch sử</div>'; return; }
+            list.innerHTML = items.map((h, i) => {
+                // Append 'Z' to UTC timestamp so JS converts to local timezone correctly
+                const rawDate = h.created_at || '';
+                const date = new Date(rawDate.endsWith('Z') ? rawDate : rawDate + 'Z');
+                const timeStr = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+                const jobId = h.job_id || h.id || ('H' + (i + 1));
+                const isFailed = h.status === 'failed' || h.status === 'cancelled';
+                const isProcessing = h.status === 'pending' || h.status === 'processing';
+                const statusLabel = h.status === 'completed' ? '<i class="fa-solid fa-circle-check"></i> Hoàn thành'
+                    : h.status === 'cancelled' ? '<i class="fa-solid fa-ban"></i> Đã hủy'
+                        : isFailed ? '<i class="fa-solid fa-circle-xmark"></i> ' + (h.error_message || 'Lỗi')
+                            : '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý';
+                const hasAudio = h.status === 'completed' && h.result_file;
+                const showActions = isFailed || isProcessing;
+                return `
+                <div class="history-item-sm" id="hItem${i}">
+                    <div class="h-header">
+                        <span class="h-id">#${jobId}</span>
+                        <div class="h-right">
+                            <span class="h-time"><i class="fa-regular fa-clock"></i> ${timeStr} ${dateStr}</span>
+                            <span class="h-badge ${h.status}" id="hBadge${i}">${statusLabel}</span>
+                        </div>
+                    </div>
+                    <div class="h-text">${h.text_preview || '...'}</div>
+                    ${isProcessing ? `
+                    <div style="margin:8px 0 4px;">
+                        <div style="height:5px;background:rgba(255,255,255,0.08);border-radius:999px;overflow:hidden;">
+                            <div id="hBar${i}" style="height:100%;width:0%;background:linear-gradient(90deg,var(--primary),#8b5cf6);border-radius:999px;transition:width 0.5s ease;"></div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;margin-top:4px;">
+                            <span id="hStatusText${i}" style="font-size:0.72rem;color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...</span>
+                            <span id="hPct${i}" style="font-size:0.72rem;font-weight:700;color:var(--primary);">0%</span>
+                        </div>
+                    </div>` : ''}
+                    ${hasAudio ? `
+                    <div class="h-divider"></div>
+                    <div class="h-player">
+                        <button class="h-play-btn" onclick="hPlay(this,'hAudio${i}')"><i class="fa-solid fa-play"></i></button>
+                        <input type="range" value="0" min="0" step="0.1" id="hSeek${i}">
+                        <div class="h-ptime" id="hTime${i}">0:00 / 0:00</div>
+                        <div class="h-player-actions">
+                            <a href="${h.result_file}" download title="Tải MP3"><i class="fa-solid fa-download"></i></a>
+                        </div>
+                    </div>
+                    <audio id="hAudio${i}" preload="none" src="${h.result_file}"
+                        onloadedmetadata="hMeta(this,${i})"
+                        ontimeupdate="hUpdate(this,${i})"></audio>` : ''}
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div class="h-credit">Tín dụng sử dụng: <span>${(h.characters_used || 0).toLocaleString('vi-VN')}</span></div>
+                        ${showActions ? `<div style="display:flex;gap:6px;" id="hActions${i}">
+                            <button onclick="retryHistoryJob('${jobId}', ${i})" style="background:#3b82f6;color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:0.72rem;cursor:pointer;font-family:inherit;" title="Chạy lại">
+                                <i class="fa-solid fa-rotate-right"></i> Chạy lại
+                            </button>
+                            <button onclick="cancelHistoryJob('${jobId}', ${i})" style="background:transparent;color:#f87171;border:1px solid rgba(239,68,68,0.3);padding:4px 10px;border-radius:6px;font-size:0.72rem;cursor:pointer;font-family:inherit;" title="Hủy job">
+                                <i class="fa-solid fa-xmark"></i> Hủy
+                            </button>
+                        </div>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+
+            // Start polling for processing/pending items
+            items.forEach((h, i) => {
+                if (h.status === 'pending' || h.status === 'processing') {
+                    const jobId = h.job_id || h.id;
+                    if (!jobId) return;
+                    const pollId = setInterval(async () => {
+                        try {
+                            // Poll directly from external API (same as main result area)
+                            const res = await fetch(`${EXT_API}/status.php?api_key=${EXT_KEY}&job_id=${jobId}`);
+                            const data = await res.json();
+                            const bar = document.getElementById(`hBar${i}`);
+                            const pctEl = document.getElementById(`hPct${i}`);
+                            const statusText = document.getElementById(`hStatusText${i}`);
+                            const badge = document.getElementById(`hBadge${i}`);
+
+                            if (data.status === 'completed' && data.download_url) {
+                                clearInterval(pollId);
+                                if (bar) bar.style.width = '100%';
+                                if (pctEl) pctEl.textContent = '100%';
+                                if (statusText) statusText.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu audio...';
+                                // Download and save audio locally
+                                let histAudioUrl = data.download_url;
+                                try {
+                                    const mp3File = data.download_url.split('/').pop();
+                                    const proxyUrl = EXT_API.replace('/external/v1', '/results/download.php') + '?file=' + mp3File;
+                                    const audioRes = await fetch(proxyUrl);
+                                    if (!audioRes.ok) throw new Error('Download failed: HTTP ' + audioRes.status);
+                                    const audioBlob = await audioRes.blob();
+                                    if (audioBlob.size < 1000) throw new Error('Audio file too small: ' + audioBlob.size + ' bytes');
+                                    const formData = new FormData();
+                                    formData.append('audio', audioBlob, jobId + '.mp3');
+                                    formData.append('job_id', jobId);
+                                    const saveRes = await fetch(`${API}/save_audio.php`, {
+                                        method: 'POST',
+                                        headers: { 'Authorization': 'Bearer ' + token },
+                                        body: formData
+                                    });
+                                    const saveData = await saveRes.json();
+                                    if (saveData.status === 'success' && saveData.local_url) {
+                                        histAudioUrl = saveData.local_url;
+                                        await fetch(`${API}/proxy_tts.php`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                                            body: JSON.stringify({ action: 'update_status', job_id: jobId, status: 'completed', result_file: saveData.local_url })
+                                        });
+                                    }
+                                } catch (e) {
+                                    console.warn('History audio save failed:', e);
+                                    // Still mark completed in local DB to prevent loop
+                                    try {
+                                        await fetch(`${API}/proxy_tts.php`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                                            body: JSON.stringify({ action: 'update_status', job_id: jobId, status: 'completed', result_file: histAudioUrl })
+                                        });
+                                    } catch (e2) { console.warn('Fallback update_status failed:', e2); }
+                                }
+                                loadHistory();
+                                loadProfile();
+                                return;
+                            }
+
+                            if (data.status?.includes?.('failed')) {
+                                clearInterval(pollId);
+                                const errMsg = data.error_message || '';
+                                if (errMsg) {
+                                    fetch(`${API}/proxy_tts.php`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ action: 'update_status', job_id: jobId, status: 'failed', error_message: errMsg }) });
+                                }
+                                loadHistory();
+                                return;
+                            }
+
+                            const total = parseInt(data.total_chunks) || 0;
+                            const done = parseInt(data.processed_chunks) || 0;
+                            let percent = 0;
+                            if (total > 0) {
+                                percent = Math.min(Math.round((done / total) * 100), 95);
+                            } else if (data.status === 'processing') {
+                                percent = 5;
+                            }
+                            if (bar) bar.style.width = `${percent}%`;
+                            if (pctEl) pctEl.textContent = `${percent}%`;
+                            if (statusText) {
+                                if (data.status === 'pending') {
+                                    statusText.innerHTML = '<i class="fa-solid fa-clock"></i> Chờ xử lý...';
+                                } else if (total > 0) {
+                                    statusText.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý ${percent}%`;
+                                }
+                            }
+                            if (badge && total > 0) {
+                                badge.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${percent}%`;
+                            }
+                        } catch (e) { }
+                    }, 3000);
+                    window._historyPolls.push(pollId);
+                }
+            });
+        }
+
+        async function retryHistoryJob(jobId, idx) {
+            const actionsDiv = document.getElementById('hActions' + idx);
+            if (actionsDiv) actionsDiv.innerHTML = '<span style="color:var(--text-muted);font-size:0.72rem;"><i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...</span>';
+            try {
+                const res = await fetch(`${API}/proxy_tts.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ action: 'retry_job', job_id: jobId })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    if (actionsDiv) actionsDiv.innerHTML = '<span style="color:#4ade80;font-size:0.72rem;"><i class="fa-solid fa-check"></i> Đã gửi lại</span>';
+                    setTimeout(() => loadHistory(), 2000);
+                } else {
+                    if (actionsDiv) actionsDiv.innerHTML = `<span style="color:#f87171;font-size:0.72rem;">❌ ${data.error || 'Lỗi'}</span>`;
+                }
+            } catch (e) {
+                if (actionsDiv) actionsDiv.innerHTML = '<span style="color:#f87171;font-size:0.72rem;">❌ Lỗi kết nối</span>';
+            }
+        }
+
+        async function cancelHistoryJob(jobId, idx) {
+            if (!confirm('Hủy job này? Chỉ hoàn ký tự nếu job chưa bắt đầu xử lý.')) return;
+            const actionsDiv = document.getElementById('hActions' + idx);
+            if (actionsDiv) actionsDiv.innerHTML = '<span style="color:var(--text-muted);font-size:0.72rem;"><i class="fa-solid fa-spinner fa-spin"></i> Đang hủy...</span>';
+            try {
+                const res = await fetch(`${API}/proxy_tts.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ action: 'cancel_job', job_id: jobId })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    if (actionsDiv) actionsDiv.innerHTML = `<span style="color:#4ade80;font-size:0.72rem;"><i class="fa-solid fa-check"></i> ${data.message}</span>`;
+                    setTimeout(() => { loadHistory(); loadProfile(); }, 1500);
+                } else {
+                    if (actionsDiv) actionsDiv.innerHTML = `<span style="color:#f87171;font-size:0.72rem;">❌ ${data.error || 'Lỗi'}</span>`;
+                }
+            } catch (e) {
+                if (actionsDiv) actionsDiv.innerHTML = '<span style="color:#f87171;font-size:0.72rem;">❌ Lỗi kết nối</span>';
+            }
+        }
+
+        // History audio player helpers
+        function hPlay(btn, audioId) {
+            const audio = document.getElementById(audioId);
+            if (!audio) return;
+            // Pause all other audios
+            document.querySelectorAll('.history-item-sm audio').forEach(a => { if (a.id !== audioId) { a.pause(); } });
+            document.querySelectorAll('.h-play-btn i').forEach(i => i.className = 'fa-solid fa-play');
+            if (audio.paused) { audio.play(); btn.querySelector('i').className = 'fa-solid fa-pause'; }
+            else { audio.pause(); btn.querySelector('i').className = 'fa-solid fa-play'; }
+            audio.onended = () => { btn.querySelector('i').className = 'fa-solid fa-play'; };
+        }
+        function hMeta(audio, i) {
+            const seek = document.getElementById('hSeek' + i);
+            const time = document.getElementById('hTime' + i);
+            if (seek && isFinite(audio.duration)) { seek.max = audio.duration; }
+            if (time) time.textContent = `0:00 / ${fmtTime(audio.duration)}`;
+        }
+        function hUpdate(audio, i) {
+            const seek = document.getElementById('hSeek' + i);
+            const time = document.getElementById('hTime' + i);
+            if (seek && !audio._seeking) seek.value = audio.currentTime;
+            if (time) time.textContent = `${fmtTime(audio.currentTime)} / ${fmtTime(audio.duration)}`;
+        }
+
+        async function clearHistory() {
+            if (!confirm('Xóa tất cả lịch sử?')) return;
+            try {
+                await fetch(`${API}/history.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ action: 'clear_all' })
+                });
+                loadHistory();
+            } catch (e) { }
+        }
+
+        // ─── Settings Modal ───
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('active');
+            document.getElementById('oldPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            document.getElementById('settingsMsg').className = 'settings-msg';
+            document.getElementById('settingsMsg').style.display = 'none';
+            document.getElementById('oldPassword').focus();
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+
+        async function changePassword() {
+            const oldPw = document.getElementById('oldPassword').value;
+            const newPw = document.getElementById('newPassword').value;
+            const confirmPw = document.getElementById('confirmPassword').value;
+            const msgEl = document.getElementById('settingsMsg');
+
+            if (!oldPw || !newPw) {
+                msgEl.className = 'settings-msg error';
+                msgEl.textContent = 'Vui lòng nhập đầy đủ thông tin';
+                msgEl.style.display = 'block';
+                return;
+            }
+            if (newPw.length < 6) {
+                msgEl.className = 'settings-msg error';
+                msgEl.textContent = 'Mật khẩu mới phải có ít nhất 6 ký tự';
+                msgEl.style.display = 'block';
+                return;
+            }
+            if (newPw !== confirmPw) {
+                msgEl.className = 'settings-msg error';
+                msgEl.textContent = 'Mật khẩu mới không khớp';
+                msgEl.style.display = 'block';
+                return;
+            }
+
+            const btn = document.getElementById('btnChangePass');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-sm"></span> Đang xử lý...';
+
+            try {
+                const res = await fetch(`${API}/auth.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ action: 'change_password', old_password: oldPw, new_password: newPw })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    msgEl.className = 'settings-msg success';
+                    msgEl.textContent = '✅ Đổi mật khẩu thành công!';
+                    msgEl.style.display = 'block';
+                    document.getElementById('oldPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                    setTimeout(() => closeSettings(), 2000);
+                } else {
+                    msgEl.className = 'settings-msg error';
+                    msgEl.textContent = data.error || 'Đổi mật khẩu thất bại';
+                    msgEl.style.display = 'block';
+                }
+            } catch (e) {
+                msgEl.className = 'settings-msg error';
+                msgEl.textContent = 'Lỗi kết nối server';
+                msgEl.style.display = 'block';
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Xác nhận';
+        }
+
+        function logout() {
+            localStorage.removeItem('customer_token');
+            localStorage.removeItem('customer_user');
+            window.location.href = 'index.html';
+        }
+
+        // ─── Pricing / Plans ───
+        let bankInfo = {};
+
+        async function loadPublicPlans() {
+            try {
+                // Load plans
+                const res = await fetch(`${API}/plans.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'list_public' })
+                });
+                const data = await res.json();
+                const plans = data.plans || [];
+
+                // Load bank info from settings
+                const sRes = await fetch(`${API}/settings.php?action=get_public`);
+                const sData = await sRes.json();
+                bankInfo = {
+                    bank_name: sData.bank_name || '',
+                    bank_account: sData.bank_account || '',
+                    bank_owner: sData.bank_owner || '',
+                    bank_note: sData.bank_note || ''
+                };
+
+                renderPublicPlans(plans);
+                loadMyOrders();
+            } catch (e) {
+                document.getElementById('plansList').innerHTML = '<div style="text-align:center;color:var(--error);padding:20px;">Lỗi tải gói dịch vụ</div>';
+            }
+        }
+
+        function renderPublicPlans(plans) {
+            const container = document.getElementById('plansList');
+            if (!plans.length) {
+                container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;">Chưa có gói nào</div>';
+                return;
+            }
+            container.innerHTML = plans.map(p => `
+                <div style="border:1px solid var(--border);border-radius:12px;padding:16px;transition:.3s;cursor:pointer;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <div style="font-weight:700;font-size:0.95rem;">${p.name}</div>
+                        <div style="color:var(--primary);font-weight:700;font-size:0.95rem;">${p.price || '--'}</div>
+                    </div>
+                    ${p.description ? '<div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:10px;">' + p.description + '</div>' : ''}
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-size:0.8rem;color:var(--text-muted);"><i class="fa-solid fa-coins"></i> ${Number(p.quota).toLocaleString('vi-VN')} ký tự</span>
+                        <button class="btn btn-primary btn-sm" onclick="showPurchaseModal(${p.id}, '${p.name}', '${p.price || ''}', ${p.quota})">
+                            <i class="fa-solid fa-cart-plus"></i> Mua gói
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showPurchaseModal(planId, planName, planPrice, planQuota) {
+            const bankHtml = bankInfo.bank_name ? `
+                <div style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:14px;margin-bottom:16px;">
+                    <div style="font-weight:700;margin-bottom:8px;"><i class="fa-solid fa-building-columns" style="color:var(--primary);"></i> Thông tin chuyển khoản</div>
+                    <div style="font-size:0.82rem;line-height:1.8;">
+                        <div><strong>Ngân hàng:</strong> ${bankInfo.bank_name}</div>
+                        <div><strong>Số TK:</strong> <span style="color:var(--primary);font-weight:700;font-size:1rem;letter-spacing:1px;">${bankInfo.bank_account}</span></div>
+                        <div><strong>Chủ TK:</strong> ${bankInfo.bank_owner}</div>
+                        ${bankInfo.bank_note ? '<div style="margin-top:6px;color:var(--text-muted);font-size:0.78rem;"><i class="fa-solid fa-circle-info"></i> ' + bankInfo.bank_note + '</div>' : ''}
+                    </div>
+                </div>
+            ` : '<div style="color:var(--error);margin-bottom:12px;font-size:0.82rem;"><i class="fa-solid fa-triangle-exclamation"></i> Chưa có thông tin chuyển khoản. Vui lòng liên hệ Admin.</div>';
+
+            // Create modal dynamically
+            let modal = document.getElementById('purchaseModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'purchaseModal';
+                modal.className = 'settings-modal';
+                document.body.appendChild(modal);
+            }
+            modal.innerHTML = `
+                <div class="settings-box" style="max-width:460px;">
+                    <h3 style="margin:0 0 16px;"><i class="fa-solid fa-cart-shopping" style="color:var(--primary);"></i> Mua gói dịch vụ</h3>
+                    <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:16px;">
+                        <div style="font-weight:700;font-size:1.05rem;">${planName}</div>
+                        <div style="display:flex;justify-content:space-between;margin-top:6px;">
+                            <span style="color:var(--text-muted);font-size:0.85rem;"><i class="fa-solid fa-coins"></i> ${Number(planQuota).toLocaleString('vi-VN')} ký tự</span>
+                            <span style="color:var(--primary);font-weight:700;">${planPrice}</span>
+                        </div>
+                    </div>
+                    ${bankHtml}
+                    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:16px;">
+                        <i class="fa-solid fa-circle-info"></i> Sau khi chuyển khoản, bấm "Xác nhận đã CK" để gửi yêu cầu. Admin sẽ duyệt và kích hoạt gói cho bạn.
+                    </div>
+                    <div class="btn-row" style="display:flex;gap:10px;justify-content:flex-end;">
+                        <button class="btn btn-outline" onclick="closePurchaseModal()">Hủy</button>
+                        <button class="btn btn-primary" id="btnPurchase" onclick="submitPurchase(${planId})">
+                            <i class="fa-solid fa-paper-plane"></i> Xác nhận đã CK
+                        </button>
+                    </div>
+                </div>
+            `;
+            modal.onclick = function (e) { if (e.target === modal) closePurchaseModal(); };
+            modal.classList.add('active');
+        }
+
+        function closePurchaseModal() {
+            const modal = document.getElementById('purchaseModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        async function submitPurchase(planId) {
+            const btn = document.getElementById('btnPurchase');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-sm"></span> Đang gửi...';
+
+            try {
+                const res = await fetch(`${API}/plans.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'purchase', token: token, plan_id: planId })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('✅ ' + data.message);
+                    closePurchaseModal();
+                    loadMyOrders();
+                } else {
+                    alert('❌ ' + (data.error || 'Lỗi'));
+                }
+            } catch (e) {
+                alert('❌ Lỗi kết nối');
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Xác nhận đã CK';
+        }
+
+        async function loadMyOrders() {
+            try {
+                const res = await fetch(`${API}/plans.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'my_orders', token: token })
+                });
+                const data = await res.json();
+                const orders = data.orders || [];
+                const container = document.getElementById('myOrdersList');
+
+                if (!orders.length) {
+                    container.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:10px;">Chưa có đơn nào</div>';
+                    return;
+                }
+
+                const statusMap = {
+                    'pending': '<span style="color:#facc15;">⏳ Chờ duyệt</span>',
+                    'approved': '<span style="color:var(--success);">✅ Đã duyệt</span>',
+                    'rejected': '<span style="color:var(--error);">❌ Từ chối</span>'
+                };
+
+                container.innerHTML = orders.map(o => `
+                    <div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <div style="font-weight:600;">${o.plan_name}</div>
+                            <div style="font-size:0.72rem;color:var(--text-muted);">${o.created_at || ''}</div>
+                        </div>
+                        <div>${statusMap[o.status] || o.status}</div>
+                    </div>
+                `).join('');
+            } catch (e) { }
+        }
+
+        // ═══════════════════════════════════════
+        // TOOL SWITCHER
+        // ═══════════════════════════════════════
+        function switchTool(tool) {
+            document.querySelectorAll('.tool-tab').forEach((t, i) => {
+                t.classList.toggle('active', (tool === 'tts' && i === 0) || (tool === 'conv' && i === 1));
+            });
+            document.getElementById('sectionTTS').classList.toggle('active', tool === 'tts');
+            document.getElementById('sectionConv').classList.toggle('active', tool === 'conv');
+            if (tool === 'conv' && !convInitialized) {
+                convInit();
+                convInitialized = true;
+            }
+        }
+
+        // ═══════════════════════════════════════
+        // CONVERSATION FEATURE
+        // ═══════════════════════════════════════
+        let convInitialized = false;
+        let convSpeakers = [
+            { id: 'A', voiceId: '', voiceName: '' },
+            { id: 'B', voiceId: '', voiceName: '' }
+        ];
+        const convSpeakerColors = ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#22c55e', '#ef4444', '#6366f1', '#14b8a6', '#f97316', '#a855f7'];
+        let convActiveSpeakerIdx = -1;
+        let convAllVoices = [];
+        let convPreviewAudio = null;
+        let convSearchTimer = null;
+
+        function convInit() {
+            convRenderSpeakers();
+            convBindTextarea();
+            convLoadVoices();
+            loadConvHistory();
+        }
+
+        // --- Voices ---
+        async function convLoadVoices() {
+            if (convAllVoices.length > 0) return;
+            try {
+                const res = await fetch(`${EXT_API}/voices.php?api_key=${EXT_KEY}`);
+                const data = await res.json();
+                convAllVoices = data.voices || [];
+            } catch (e) { console.error('Conv voices error:', e); }
+        }
+
+        // --- Speakers ---
+        function convRenderSpeakers() {
+            const el = document.getElementById('convSpeakersList');
+            el.innerHTML = convSpeakers.map((sp, i) => {
+                const color = convSpeakerColors[i % convSpeakerColors.length];
+                const hasVoice = sp.voiceId && sp.voiceName;
+                return `<div class="speaker-card">
+                    <div class="speaker-header">
+                        <div class="speaker-label" style="background:${color};">${sp.id}</div>
+                        <button class="speaker-voice-btn" onclick="convOpenVoiceModal(${i})">
+                            <span class="voice-name-text ${hasVoice ? '' : 'placeholder'}">${hasVoice ? sp.voiceName : 'Chọn giọng nói'}</span>
+                            <i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:0.7rem;flex-shrink:0;"></i>
+                        </button>
+                        ${convSpeakers.length > 2 ? `<button class="speaker-remove" onclick="convRemoveSpeaker(${i})" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function convAddSpeaker() {
+            if (convSpeakers.length >= 10) return;
+            const nextId = String.fromCharCode(65 + convSpeakers.length);
+            convSpeakers.push({ id: nextId, voiceId: '', voiceName: '' });
+            convRenderSpeakers();
+        }
+
+        function convRemoveSpeaker(idx) {
+            if (convSpeakers.length <= 2) return;
+            convSpeakers.splice(idx, 1);
+            convSpeakers.forEach((sp, i) => sp.id = String.fromCharCode(65 + i));
+            convRenderSpeakers();
+        }
+
+        // --- Voice Modal ---
+        async function convOpenVoiceModal(idx) {
+            convActiveSpeakerIdx = idx;
+            document.getElementById('convVoiceModalSpeaker').textContent = convSpeakers[idx].id;
+            document.getElementById('convVoiceSearchInput').value = '';
+            document.getElementById('convVoiceOverlay').classList.add('active');
+            if (convAllVoices.length === 0) {
+                document.getElementById('convVoiceBody').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</div>';
+                await convLoadVoices();
+            }
+            convRenderVoiceList(convAllVoices);
+            setTimeout(() => document.getElementById('convVoiceSearchInput').focus(), 100);
+        }
+
+        function convCloseVoiceModal() {
+            document.getElementById('convVoiceOverlay').classList.remove('active');
+            if (convPreviewAudio) { convPreviewAudio.pause(); convPreviewAudio = null; }
+            convActiveSpeakerIdx = -1;
+        }
+
+        function convFilterVoices() {
+            const q = document.getElementById('convVoiceSearchInput').value.trim();
+            if (convSearchTimer) clearTimeout(convSearchTimer);
+            if (!q) { convRenderVoiceList(convAllVoices); return; }
+            document.getElementById('convVoiceBody').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Đang tìm...</div>';
+            convSearchTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(`${EXT_API}/voices.php?api_key=${EXT_KEY}&q=${encodeURIComponent(q)}`);
+                    const data = await res.json();
+                    convRenderVoiceList(data.voices || []);
+                } catch (e) { convRenderVoiceList([]); }
+            }, 300);
+        }
+
+        function convRenderVoiceList(vList) {
+            const body = document.getElementById('convVoiceBody');
+            if (!vList || !vList.length) {
+                const q = document.getElementById('convVoiceSearchInput').value.trim();
+                const isId = q.length >= 10 && !q.includes(' ');
+                body.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-muted);">
+                    <i class="fa-solid fa-search" style="font-size:1.5rem;margin-bottom:10px;opacity:0.3;"></i>
+                    <p>Không tìm thấy</p>
+                    ${isId ? `<div style="margin-top:15px;padding:12px;background:rgba(139,92,246,0.1);border:1px dashed var(--primary);border-radius:10px;">
+                        <p style="color:var(--text);margin-bottom:8px;">Dùng Voice ID này?</p>
+                        <button onclick="convSelectVoice('${q}','Custom Voice')" style="padding:6px 16px;background:var(--primary);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;"><i class="fa-solid fa-check"></i> Dùng</button>
+                    </div>` : ''}
+                </div>`;
+                return;
+            }
+            const currentVId = convActiveSpeakerIdx >= 0 ? convSpeakers[convActiveSpeakerIdx].voiceId : '';
+            body.innerHTML = vList.map(v => {
+                const accent = v.labels?.accent || '';
+                const gender = v.labels?.gender || '';
+                const age = v.labels?.age || '';
+                const isSelected = v.voice_id === currentVId;
+                const safeName = v.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                return `<div class="cv-item ${isSelected ? 'selected' : ''}" onclick="convSelectVoice('${v.voice_id}','${safeName}')">
+                    <div class="cv-avatar">${v.name.charAt(0)}</div>
+                    <div class="cv-info">
+                        <div class="cv-name">${v.name}</div>
+                        <div class="cv-tags">
+                            ${gender ? `<span class="cv-tag">${gender}</span>` : ''}
+                            ${accent ? `<span class="cv-tag">${accent}</span>` : ''}
+                            ${age ? `<span class="cv-tag">${age}</span>` : ''}
+                        </div>
+                    </div>
+                    ${v.preview_url ? `<button class="cv-preview" onclick="event.stopPropagation();convPreview('${v.preview_url}',this)" title="Nghe thử"><i class="fa-solid fa-play"></i></button>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        function convSelectVoice(voiceId, voiceName) {
+            if (convActiveSpeakerIdx >= 0) {
+                convSpeakers[convActiveSpeakerIdx].voiceId = voiceId;
+                convSpeakers[convActiveSpeakerIdx].voiceName = voiceName;
+                convRenderSpeakers();
+            }
+            convCloseVoiceModal();
+        }
+
+        function convPreview(url, btn) {
+            if (convPreviewAudio) {
+                convPreviewAudio.pause();
+                document.querySelectorAll('.cv-preview i').forEach(i => i.className = 'fa-solid fa-play');
+                if (convPreviewAudio.src === url) { convPreviewAudio = null; return; }
+            }
+            convPreviewAudio = new Audio(url);
+            btn.querySelector('i').className = 'fa-solid fa-pause';
+            convPreviewAudio.play();
+            convPreviewAudio.onended = () => { btn.querySelector('i').className = 'fa-solid fa-play'; convPreviewAudio = null; };
+        }
+
+        // --- Model Cost ---
+        function convUpdateModelCost() {
+            const model = document.getElementById('convModelSelect').value;
+            document.getElementById('convModelCostBadge').textContent = model === 'eleven_v3' ? '2đ/ký tự' : '1đ/ký tự';
+        }
+
+        // --- Textarea ---
+        function convBindTextarea() {
+            document.getElementById('convText').addEventListener('input', convUpdateCounts);
+            convUpdateCounts();
+        }
+
+        function convUpdateCounts() {
+            const text = document.getElementById('convText').value;
+            const lines = text.split('\n').filter(l => /^[A-Z]>\s*/i.test(l.trim()));
+            const totalChars = lines.reduce((sum, l) => sum + l.replace(/^[A-Z]>\s*/i, '').length, 0);
+            document.getElementById('convCharCount').textContent = totalChars.toLocaleString('vi-VN');
+            document.getElementById('convLineCount').textContent = lines.length;
+            document.getElementById('convEstCost').textContent = totalChars.toLocaleString('vi-VN');
+            document.getElementById('btnConvGenerate').disabled = totalChars === 0;
+        }
+
+        // --- Generate ---
+        async function handleConvGenerate() {
+            const text = document.getElementById('convText').value.trim();
+            if (!text) return;
+            const lines = text.split('\n').filter(l => /^[A-Z]>\s*/i.test(l.trim()));
+            if (lines.length === 0) { alert('Vui lòng nhập hội thoại với định dạng: A> nội dung'); return; }
+
+            const usedSpeakers = new Set(lines.map(l => l.trim()[0].toUpperCase()));
+            for (const spId of usedSpeakers) {
+                const speaker = convSpeakers.find(s => s.id === spId);
+                if (!speaker || !speaker.voiceId) {
+                    alert(`Vui lòng chọn giọng nói cho người nói ${spId}`);
+                    return;
+                }
+            }
+
+            const parsedLines = lines.map(l => {
+                const t = l.trim();
+                return { speaker: t[0].toUpperCase(), text: t.substring(2).trim() };
+            });
+
+            const totalChars = parsedLines.reduce((s, l) => s + l.text.length, 0);
+
+            const speakersMap = {};
+            convSpeakers.forEach(sp => {
+                if (sp.voiceId) speakersMap[sp.id] = { voice_id: sp.voiceId, voice_name: sp.voiceName };
+            });
+
+            const modelId = document.getElementById('convModelSelect').value;
+            const voiceSettings = {
+                speed: parseFloat(document.getElementById('convSpeedSlider').value),
+                stability: parseInt(document.getElementById('convStabilitySlider').value) / 100,
+                similarity_boost: parseInt(document.getElementById('convSimilaritySlider').value) / 100
+            };
+            const pauseDuration = parseFloat(document.getElementById('convPauseSlider').value);
+
+            const btn = document.getElementById('btnConvGenerate');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+
+            try {
+                // 1. Check quota locally
+                const checkRes = await fetch(`${API}/proxy_conversation.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ action: 'check_quota', characters: totalChars })
+                });
+                const checkData = await checkRes.json();
+                if (checkData.error) {
+                    alert(checkData.error);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-comments"></i> Tạo giọng nói';
+                    return;
+                }
+
+                // 2. Create conversation job on main server
+                const convRes = await fetch(`${EXT_API}/conversation.php?api_key=${EXT_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        lines: parsedLines,
+                        speakers: speakersMap,
+                        model_id: modelId,
+                        voice_settings: voiceSettings,
+                        pause_duration: pauseDuration
+                    })
+                });
+                const convData = await convRes.json();
+
+                if (convData.error) {
+                    alert('❌ ' + convData.error);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-comments"></i> Tạo giọng nói';
+                    return;
+                }
+
+                const jobId = convData.job_id;
+
+                // 3. Deduct quota locally
+                const textPreview = parsedLines.slice(0, 3).map(l => l.speaker + '> ' + l.text.substring(0, 30)).join(' ');
+                await fetch(`${API}/proxy_conversation.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({
+                        action: 'deduct_quota', characters: totalChars, job_id: jobId,
+                        text_preview: textPreview, model_id: modelId
+                    })
+                });
+
+                // 4. Show result and poll
+                convShowResult(jobId);
+                loadProfile();
+
+            } catch (e) {
+                alert('❌ Lỗi: ' + e.message);
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-comments"></i> Tạo giọng nói';
+        }
+
+        function convShowResult(jobId) {
+            const section = document.getElementById('convResultSection');
+            section.style.display = 'block';
+            section.innerHTML = `
+                <div style="padding:16px;background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);border-radius:12px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                        <span id="convStatusText-${jobId}" style="font-size:0.85rem;font-weight:600;color:var(--text-muted);">
+                            <i class="fa-solid fa-spinner fa-spin" style="color:var(--primary);"></i> Đang xử lý... (${jobId})
+                        </span>
+                        <span id="convProgressPct-${jobId}" style="font-size:0.82rem;font-weight:700;color:var(--primary);">0%</span>
+                    </div>
+                    <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:999px;overflow:hidden;">
+                        <div id="convProgressBar-${jobId}" style="height:100%;width:0%;background:linear-gradient(90deg,var(--primary),#8b5cf6);border-radius:999px;transition:width 0.5s ease;"></div>
+                    </div>
+                </div>`;
+            convPollProgress(jobId);
+        }
+
+        function convPollProgress(jobId) {
+            const section = document.getElementById('convResultSection');
+            let attempts = 0;
+            const poll = async () => {
+                attempts++;
+                try {
+                    const res = await fetch(`${EXT_API}/status.php?api_key=${EXT_KEY}&job_id=${jobId}`);
+                    const data = await res.json();
+
+                    // Update progress bar
+                    const totalChunks = parseInt(data.total_chunks) || 0;
+                    const processedChunks = parseInt(data.processed_chunks) || 0;
+                    const bar = document.getElementById(`convProgressBar-${jobId}`);
+                    const pct = document.getElementById(`convProgressPct-${jobId}`);
+                    const statusText = document.getElementById(`convStatusText-${jobId}`);
+
+                    if (data.status !== 'completed' && !data.status?.includes?.('failed')) {
+                        let percent = 0;
+                        if (totalChunks > 0) {
+                            percent = Math.min(Math.round((processedChunks / totalChunks) * 100), 95);
+                        } else if (data.status === 'processing') {
+                            percent = 5;
+                        }
+                        if (bar) bar.style.width = `${percent}%`;
+                        if (pct) pct.textContent = `${percent}%`;
+                        if (statusText) {
+                            if (data.status === 'pending') {
+                                statusText.innerHTML = `<i class="fa-solid fa-clock" style="color:#3498db;"></i> Chờ xử lý... (${jobId})`;
+                            } else if (totalChunks > 0) {
+                                statusText.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="color:var(--primary);"></i> Đang xử lý ${percent}% (${jobId})`;
+                            }
+                        }
+                    }
+
+                    if (data.status === 'completed' && data.download_url) {
+                        if (bar) bar.style.width = '100%';
+                        if (pct) pct.textContent = '100%';
+                        // Save locally
+                        section.innerHTML = `<div style="text-align:center;padding:12px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:12px;">
+                            <i class="fa-solid fa-spinner fa-spin" style="color:var(--success);"></i> Đang lưu audio...
+                        </div>`;
+
+                        let audioUrl = data.download_url;
+                        try {
+                            const mp3File = data.download_url.split('/').pop();
+                            const proxyUrl = EXT_API.replace('/external/v1', '/results/download.php') + '?file=' + mp3File;
+                            const audioRes = await fetch(proxyUrl);
+                            if (!audioRes.ok) throw new Error('Download failed: HTTP ' + audioRes.status);
+                            const audioBlob = await audioRes.blob();
+                            if (audioBlob.size < 1000) throw new Error('Audio file too small: ' + audioBlob.size + ' bytes');
+                            const formData = new FormData();
+                            formData.append('audio', audioBlob, jobId + '.mp3');
+                            formData.append('job_id', jobId);
+                            const saveRes = await fetch(`${API}/save_audio.php`, {
+                                method: 'POST',
+                                headers: { 'Authorization': 'Bearer ' + token },
+                                body: formData
+                            });
+                            const saveData = await saveRes.json();
+                            if (saveData.status === 'success' && saveData.local_url) {
+                                audioUrl = saveData.local_url;
+                            }
+                        } catch (e) { console.warn('Local save failed:', e); }
+
+                        // Update status
+                        await fetch(`${API}/proxy_conversation.php`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                            body: JSON.stringify({ action: 'update_status', job_id: jobId, status: 'completed', result_file: audioUrl })
+                        });
+
+                        section.innerHTML = `
+                            <div style="background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:12px;padding:12px;">
+                                <div style="display:flex;align-items:center;gap:10px;">
+                                    <button onclick="convTogglePlay(this)" style="width:36px;height:36px;border-radius:50%;background:var(--primary);border:none;color:white;display:flex;align-items:center;justify-content:center;cursor:pointer;"><i class="fa-solid fa-play"></i></button>
+                                    <div style="flex:1;font-size:0.85rem;font-weight:600;">✅ ${jobId}</div>
+                                    <a href="${audioUrl}" download style="color:var(--primary);font-size:0.82rem;text-decoration:none;font-weight:600;"><i class="fa-solid fa-download"></i> Tải</a>
+                                </div>
+                                <audio id="convResultAudio" preload="auto" src="${audioUrl}"></audio>
+                            </div>`;
+
+                        // Add to history
+                        convAddToHistory(jobId, audioUrl);
+                        switchConvPanel('history');
+                        loadProfile();
+                        return;
+                    }
+
+                    if (data.status && data.status.includes('failed')) {
+                        await fetch(`${API}/proxy_conversation.php`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                            body: JSON.stringify({ action: 'update_status', job_id: jobId, status: 'failed' })
+                        });
+                        section.innerHTML = `<div style="text-align:center;padding:12px;color:var(--error);background:rgba(239,68,68,0.1);border-radius:12px;"><i class="fa-solid fa-circle-xmark"></i> Thất bại</div>`;
+                        return;
+                    }
+
+                    if (attempts < 90) setTimeout(poll, 3000);
+                } catch (e) { if (attempts < 90) setTimeout(poll, 3000); }
+            };
+            setTimeout(poll, 2000);
+        }
+
+        function convTogglePlay(btn) {
+            const audio = document.getElementById('convResultAudio');
+            if (!audio) return;
+            if (audio.paused) { audio.play(); btn.querySelector('i').className = 'fa-solid fa-pause'; }
+            else { audio.pause(); btn.querySelector('i').className = 'fa-solid fa-play'; }
+            audio.onended = () => { btn.querySelector('i').className = 'fa-solid fa-play'; };
+        }
+
+        function switchConvPanel(name) {
+            const tabs = document.querySelectorAll('.conv-tab');
+            tabs.forEach(t => t.classList.remove('active'));
+            document.getElementById('convPanelSettings').classList.toggle('hidden', name !== 'settings');
+            document.getElementById('convPanelHistory').classList.toggle('hidden', name !== 'history');
+            const idxMap = { 'settings': 0, 'history': 1 };
+            const idx = idxMap[name] ?? 0;
+            if (tabs[idx]) tabs[idx].classList.add('active');
+        }
+
+        function convAddToHistory(jobId, audioUrl) {
+            const list = document.getElementById('convJobsList');
+            // Remove empty placeholder
+            const placeholder = list.querySelector('[style*="text-align: center"]') || list.querySelector('[style*="text-align:center"]');
+            if (placeholder) list.innerHTML = '';
+
+            const card = document.createElement('div');
+            card.className = 'conv-job-card';
+            const now = new Date();
+            const time = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            card.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <span style="font-weight:700;font-size:0.82rem;">${jobId}</span>
+                    <span style="color:var(--success);font-size:0.78rem;font-weight:700;"><i class="fa-solid fa-check-circle"></i> ${time}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <audio controls preload="none" src="${audioUrl}" style="flex:1;height:32px;"></audio>
+                    <a href="${audioUrl}" download style="color:var(--primary);font-size:0.85rem;"><i class="fa-solid fa-download"></i></a>
+                </div>`;
+            list.prepend(card);
+            const count = list.querySelectorAll('.conv-job-card').length;
+            document.getElementById('convHistoryCount').textContent = count;
+        }
+
+        async function loadConvHistory() {
+            if (!token) return;
+            try {
+                const res = await fetch(`${API}/history.php?type=conversation`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                if (data.status !== 'success' || !data.history || data.history.length === 0) return;
+
+                const list = document.getElementById('convJobsList');
+                list.innerHTML = '';
+
+                data.history.forEach((h, i) => {
+                    const card = document.createElement('div');
+                    card.className = 'conv-job-card';
+                    const date = new Date(h.created_at);
+                    const timeStr = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+                    const jobId = h.job_id || ('CV-' + (i + 1));
+                    const statusLabel = h.status === 'completed'
+                        ? '<i class="fa-solid fa-circle-check"></i> Hoàn thành'
+                        : h.status === 'failed' ? '<i class="fa-solid fa-circle-xmark"></i> Lỗi'
+                            : '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý';
+                    const hasAudio = h.status === 'completed' && h.result_file;
+
+                    card.innerHTML = `
+                        <div class="h-header">
+                            <span class="h-id">#${jobId}</span>
+                            <div class="h-right">
+                                <span class="h-time"><i class="fa-regular fa-clock"></i> ${timeStr} ${dateStr}</span>
+                                <span class="h-badge ${h.status}">${statusLabel}</span>
+                            </div>
+                        </div>
+                        <div class="h-text">${h.text_preview || '...'}</div>
+                        ${hasAudio ? `
+                        <div class="h-divider"></div>
+                        <div class="h-player">
+                            <button class="h-play-btn" onclick="hPlay(this,'chAudio${i}')"><i class="fa-solid fa-play"></i></button>
+                            <input type="range" value="0" min="0" step="0.1" id="chSeek${i}">
+                            <div class="h-ptime" id="chTime${i}">0:00 / 0:00</div>
+                            <div class="h-player-actions">
+                                <a href="${h.result_file}" download title="Tải MP3"><i class="fa-solid fa-download"></i></a>
+                            </div>
+                        </div>
+                        <audio id="chAudio${i}" preload="none" src="${h.result_file}"
+                            onloadedmetadata="chMeta(this,${i})"
+                            ontimeupdate="chUpdate(this,${i})"></audio>` : ''}
+                        <div class="h-credit">Tín dụng sử dụng: <span>${(h.characters_used || 0).toLocaleString('vi-VN')}</span></div>`;
+                    list.appendChild(card);
+                });
+
+                document.getElementById('convHistoryCount').textContent = data.history.length;
+            } catch (e) {
+                console.warn('Load conv history failed:', e);
+            }
+        }
+
+        // Conv history audio player helpers (reuse hPlay, but with conv-specific ids)
+        function chMeta(audio, i) {
+            const seek = document.getElementById('chSeek' + i);
+            const time = document.getElementById('chTime' + i);
+            if (seek && isFinite(audio.duration)) { seek.max = audio.duration; }
+            if (time) time.textContent = `0:00 / ${fmtTime(audio.duration)}`;
+        }
+        function chUpdate(audio, i) {
+            const seek = document.getElementById('chSeek' + i);
+            const time = document.getElementById('chTime' + i);
+            if (seek && !audio._seeking) seek.value = audio.currentTime;
+            if (time) time.textContent = `${fmtTime(audio.currentTime)} / ${fmtTime(audio.duration)}`;
+        }
+    </script>
+
+    <!-- Promo Modal -->
+    <div class="promo-modal" id="promoModal" onclick="if(event.target === this) closePromo()">
+        <div class="promo-content">
+            <div class="promo-close" onclick="closePromo()">
+                <i class="fa-solid fa-xmark"></i>
+            </div>
+            <div class="promo-image-container" id="promoContainer">
+                <!-- Image will be injected here -->
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

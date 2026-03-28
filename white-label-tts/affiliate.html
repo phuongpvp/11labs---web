@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giới thiệu bạn bè</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #7c3aed;
+            --primary-hover: #6d28d9;
+            --bg: #09090b;
+            --surface: #18181b;
+            --border: #27272a;
+            --text: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --accent: #ec4899;
+            --success: #22c55e;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, #09090b);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 30px 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;
+        }
+        .header h1 { font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; gap: 12px; }
+        .header h1 i { color: var(--primary); }
+        .back-link {
+            color: var(--text-muted); text-decoration: none; font-size: 0.85rem;
+            display: flex; align-items: center; gap: 6px; transition: 0.2s;
+        }
+        .back-link:hover { color: var(--text); }
+        .card {
+            background: rgba(24, 24, 27, 0.8); border: 1px solid var(--border);
+            border-radius: 16px; padding: 28px; margin-bottom: 24px; backdrop-filter: blur(12px);
+        }
+        .card-title {
+            font-size: 1rem; font-weight: 700; margin-bottom: 6px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .card-title i { color: var(--primary); }
+        .card-desc { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px; }
+
+        /* Referral Link */
+        .ref-link-box {
+            display: flex; gap: 10px; margin-bottom: 12px;
+        }
+        .ref-link-box input {
+            flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+            padding: 12px 16px; color: var(--text); font-size: 0.9rem; outline: none;
+        }
+        .ref-link-box button {
+            background: var(--primary); border: none; border-radius: 10px; padding: 12px 20px;
+            color: #fff; font-weight: 600; cursor: pointer; white-space: nowrap; transition: 0.2s;
+        }
+        .ref-link-box button:hover { background: var(--primary-hover); }
+
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card {
+            background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+            padding: 20px; text-align: center;
+        }
+        .stat-card .value { font-size: 1.8rem; font-weight: 800; color: var(--primary); }
+        .stat-card .label { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+
+        /* Table */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { color: var(--text-muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; }
+
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+        }
+        .badge-success { background: rgba(34,197,94,0.15); color: #22c55e; }
+        .badge-muted { background: rgba(161,161,170,0.15); color: #a1a1aa; }
+
+        .toast {
+            position: fixed; bottom: 30px; right: 30px; background: var(--success);
+            color: #fff; padding: 12px 24px; border-radius: 12px; font-weight: 600;
+            font-size: 0.85rem; opacity: 0; transform: translateY(20px);
+            transition: 0.3s; z-index: 999; pointer-events: none;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .ref-link-box { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fa-solid fa-users"></i> Giới thiệu bạn bè</h1>
+        <a href="app.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Quay lại</a>
+    </div>
+
+    <!-- Referral Link -->
+    <div class="card">
+        <div class="card-title"><i class="fa-solid fa-link"></i> Link giới thiệu</div>
+        <div class="card-desc">Chia sẻ link này để bạn bè đăng ký. Bạn nhận <strong id="rateDisplay">10%</strong> bonus khi họ mua gói!</div>
+        <div class="ref-link-box">
+            <input type="text" id="refLinkInput" readonly placeholder="Đang tải...">
+            <button onclick="copyLink()"><i class="fa-solid fa-copy"></i> Copy</button>
+        </div>
+        <div style="color:var(--text-muted);font-size:0.8rem">Mã giới thiệu: <strong id="refCodeDisplay">---</strong></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="value" id="statTotal">0</div>
+            <div class="label">Đã giới thiệu</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statActive">0</div>
+            <div class="label">Đã mua gói</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statBonus">0</div>
+            <div class="label">Bonus nhận được</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statRate">10%</div>
+            <div class="label">Tỉ lệ hoa hồng</div>
+        </div>
+    </div>
+
+    <!-- Referrals Table -->
+    <div class="card">
+        <div class="card-title"><i class="fa-solid fa-user-group"></i> Danh sách người giới thiệu</div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Email</th><th>Gói</th><th>Trạng thái</th><th>Bonus</th><th>Ngày</th></tr>
+                </thead>
+                <tbody id="referralsTable">
+                    <tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Đang tải...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Bonus History -->
+    <div class="card">
+        <div class="card-title"><i class="fa-solid fa-gift"></i> Lịch sử nhận bonus</div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Email người mua</th><th>Gói</th><th>Quota gói</th><th>Bonus</th><th>Ngày</th></tr>
+                </thead>
+                <tbody id="bonusTable">
+                    <tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Đang tải...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast">Đã copy link!</div>
+
+<script>
+const API = 'api';
+
+function getToken() {
+    return localStorage.getItem('customer_token') || '';
+}
+
+async function loadAffiliate() {
+    const token = getToken();
+    if (!token) {
+        window.location.href = 'app.html';
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API}/affiliate.php`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.error) {
+            if (res.status === 401) window.location.href = 'app.html';
+            return;
+        }
+
+        const d = data.data;
+
+        // Link & Code
+        document.getElementById('refLinkInput').value = d.referral_link;
+        document.getElementById('refCodeDisplay').textContent = d.referral_code;
+
+        // Stats
+        document.getElementById('statTotal').textContent = d.referral_count.toLocaleString('vi-VN');
+        document.getElementById('statActive').textContent = d.active_count.toLocaleString('vi-VN');
+        document.getElementById('statBonus').textContent = d.total_bonus.toLocaleString('vi-VN');
+        document.getElementById('statRate').textContent = d.commission_rate + '%';
+        document.getElementById('rateDisplay').textContent = d.commission_rate + '%';
+
+        // Referrals Table
+        const tbody = document.getElementById('referralsTable');
+        if (d.referrals.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Chưa có ai đăng ký từ link của bạn</td></tr>';
+        } else {
+            tbody.innerHTML = d.referrals.map(r => `
+                <tr>
+                    <td>${r.email}</td>
+                    <td>${r.plan_name || '<span class="badge badge-muted">Chưa mua</span>'}</td>
+                    <td>${r.is_active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-muted">Inactive</span>'}</td>
+                    <td style="color:var(--success);font-weight:600">${r.bonus_given > 0 ? '+' + r.bonus_given.toLocaleString('vi-VN') : '-'}</td>
+                    <td>${new Date(r.created_at).toLocaleDateString('vi-VN')}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Bonus/Revenue Table
+        const bonusTbody = document.getElementById('bonusTable');
+        if (d.revenue_activations.length === 0) {
+            bonusTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Chưa có</td></tr>';
+        } else {
+            bonusTbody.innerHTML = d.revenue_activations.map(a => {
+                const bonus = Math.round(a.quota_granted * d.commission_rate / 100);
+                return `
+                <tr>
+                    <td>${a.email}</td>
+                    <td>${a.plan_name}</td>
+                    <td>${Number(a.quota_granted).toLocaleString('vi-VN')}</td>
+                    <td style="color:var(--success);font-weight:600">+${bonus.toLocaleString('vi-VN')}</td>
+                    <td>${new Date(a.activated_at).toLocaleDateString('vi-VN')}</td>
+                </tr>
+                `;
+            }).join('');
+        }
+    } catch (err) {
+        console.error('Affiliate load error:', err);
+    }
+}
+
+function copyLink() {
+    const input = document.getElementById('refLinkInput');
+    navigator.clipboard.writeText(input.value).then(() => {
+        const toast = document.getElementById('toast');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+    });
+}
+
+// Load dynamic theme from settings
+async function loadTheme() {
+    try {
+        const res = await fetch(`${API}/settings.php?action=get_public`);
+        const data = await res.json();
+        if (data.primary_color) {
+            document.documentElement.style.setProperty('--primary', data.primary_color);
+        }
+        if (data.site_name) {
+            document.title = `Giới thiệu bạn bè - ${data.site_name}`;
+        }
+    } catch(e) {}
+}
+
+loadTheme();
+loadAffiliate();
+</script>
+</body>
+</html>

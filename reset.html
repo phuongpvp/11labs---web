@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="icon.png">
+    <title>Đặt lại mật khẩu - 11LABS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --bg: #09090b;
+            --surface: #18181b;
+            --border: #27272a;
+            --text: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --error: #ef4444;
+            --success: #22c55e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, #09090b);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background: rgba(24, 24, 27, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--primary), #ec4899);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3);
+        }
+
+        .msg {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        .error {
+            color: var(--error);
+        }
+
+        .success {
+            color: var(--success);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Đặt lại mật khẩu</h2>
+        <div id="loading" style="text-align: center; margin-bottom: 20px;">Đang kiểm tra liên kết...</div>
+
+        <div id="resetForm" style="display: none;">
+            <div class="form-group">
+                <label>Mật khẩu mới</label>
+                <input type="password" id="newPass" class="form-control" placeholder="••••••">
+            </div>
+            <div class="form-group">
+                <label>Xác nhận mật khẩu</label>
+                <input type="password" id="confirmPass" class="form-control" placeholder="••••••">
+            </div>
+            <button class="btn" onclick="handleCompleteReset()">Cập nhật mật khẩu</button>
+        </div>
+
+        <div id="message" class="msg"></div>
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="login" style="color: var(--primary); text-decoration: none; font-size: 0.9rem;">Quay lại Đăng
+                nhập</a>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        if (!token) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('message').innerText = '❌ Liên kết không hợp lệ.';
+            document.getElementById('message').className = 'msg error';
+        } else {
+            verifyToken();
+        }
+
+        async function verifyToken() {
+            try {
+                const res = await fetch(`./api/verify_reset_token.php?token=${token}`);
+                const data = await res.json();
+
+                document.getElementById('loading').style.display = 'none';
+                if (res.ok && data.status === 'success') {
+                    document.getElementById('resetForm').style.display = 'block';
+                } else {
+                    document.getElementById('message').innerText = '❌ ' + (data.error || 'Liên kết đã hết hạn hoặc không hợp lệ.');
+                    document.getElementById('message').className = 'msg error';
+                }
+            } catch (e) {
+                document.getElementById('loading').innerText = '❌ Lỗi kết nối server.';
+            }
+        }
+
+        async function handleCompleteReset() {
+            const pass = document.getElementById('newPass').value;
+            const confirm = document.getElementById('confirmPass').value;
+
+            if (pass.length < 6) return alert('Mật khẩu phải có ít nhất 6 ký tự');
+            if (pass !== confirm) return alert('Mật khẩu xác nhận không khớp');
+
+            try {
+                const res = await fetch(`./api/complete_reset.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, password: pass })
+                });
+                const data = await res.json();
+
+                const msgEl = document.getElementById('message');
+                if (res.ok && data.status === 'success') {
+                    document.getElementById('resetForm').style.display = 'none';
+                    msgEl.innerText = '✅ Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay bây giờ.';
+                    msgEl.className = 'msg success';
+                    setTimeout(() => window.location.href = 'login', 3000);
+                } else {
+                    msgEl.innerText = '❌ ' + (data.error || 'Lỗi không xác định.');
+                    msgEl.className = 'msg error';
+                }
+            } catch (e) {
+                alert('Lỗi kết nối server');
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="icon.png">
+    <title>Lồng Tiếng Tự Động - 11LABS Dubbing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-hover: #7c3aed;
+            --bg: #09090b;
+            --surface: #18181b;
+            --border: #27272a;
+            --text: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --accent: #ec4899;
+            --success: #22c55e;
+            --error: #ef4444;
+            --secondary: #6366f1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, #09090b);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .slim-nav {
+            width: 100%;
+            padding: 10px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(9, 9, 11, 0.5);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #f4f4f5;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand i {
+            color: #f4f4f5;
+            font-size: 1rem;
+            font-weight: 900;
+        }
+
+        .brand span {
+            color: #f4f4f5;
+            font-weight: 400;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .social-icons-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 15px;
+        }
+
+        .social-icon {
+            font-size: 1rem;
+            color: var(--text-muted);
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            text-decoration: none;
+        }
+
+        .social-icon:hover {
+            transform: translateY(-3px);
+            color: white !important;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .social-icon.zalo {
+            color: #0068FF;
+            background: rgba(0, 104, 255, 0.1);
+        }
+
+        .social-icon.zalo:hover {
+            background: #0068FF;
+        }
+
+        .social-icon.telegram {
+            color: #24A1DE;
+            background: rgba(36, 161, 222, 0.1);
+        }
+
+        .social-icon.telegram:hover {
+            background: #24A1DE;
+        }
+
+        .social-icon.facebook {
+            color: #1877F2;
+            background: rgba(24, 119, 242, 0.1);
+        }
+
+        .social-icon.facebook:hover {
+            background: #1877F2;
+        }
+
+        .social-icon.youtube {
+            color: #FF0000;
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        .social-icon.youtube:hover {
+            background: #FF0000;
+        }
+
+        .logout-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 16px;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logout-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .app-body {
+            display: flex;
+            flex: 1;
+        }
+
+        .sidebar {
+            width: 220px;
+            min-width: 220px;
+            background: rgba(15, 15, 18, 0.98);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            flex-shrink: 0;
+            height: calc(100vh - 51px);
+            position: sticky;
+            top: 51px;
+        }
+
+        .sidebar-user {
+            padding: 20px 16px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .sidebar-email {
+            font-size: 0.8rem;
+            color: var(--text);
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-bottom: 6px;
+        }
+
+        .voice-tag {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 400;
+            text-transform: capitalize;
+            display: inline-block;
+        }
+
+        .sidebar-section-label {
+            padding: 14px 16px 6px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .sidebar-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 16px;
+            margin: 2px 8px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: 0.15s;
+        }
+
+        .sidebar-nav-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+        }
+
+        .sidebar-nav-item.active {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 8px 16px;
+        }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding: 14px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .quota-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .quota-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            transition: width 0.5s ease;
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
+        }
+
+        .convert-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border: none;
+            border-radius: 100px;
+            color: white !important;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.9rem;
+            box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3);
+            justify-content: center;
+        }
+
+        .convert-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(139, 92, 246, 0.5);
+        }
+
+        .upgrade-btn {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            margin-top: 10px;
+            width: 100%;
+            padding: 8px;
+            font-size: 0.8rem;
+        }
+
+        .main-area {
+            flex: 1;
+            padding: 20px 40px;
+            overflow-y: auto;
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .left-column {
+            flex: 3;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #fff, #22c55e, #3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .input-card {
+            background: rgba(24, 24, 27, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .toolbar {
+            padding: 15px 25px;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .right-column {
+            flex: 1.6;
+            min-width: 400px;
+            background: rgba(24, 24, 27, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: sticky;
+            top: 71px;
+            height: fit-content;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        /* Upload Zone */
+        .upload-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--primary);
+            background: rgba(139, 92, 246, 0.08);
+        }
+
+        .upload-zone i {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+
+        .upload-zone p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+
+        .file-info {
+            display: none;
+            margin-top: 12px;
+            padding: 10px 15px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            color: var(--success);
+        }
+
+        /* Language Selects */
+        .lang-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .lang-row select {
+            flex: 1;
+            padding: 10px 14px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: white;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .lang-row select option {
+            background: #18181b;
+        }
+
+        .lang-arrow {
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        /* Job Card */
+        .job-card {
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .job-filename-display {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 250px;
+        }
+
+        .job-timestamp {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .job-status {
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dubbed {
+            color: var(--success);
+        }
+
+        .status-processing {
+            color: var(--accent);
+        }
+
+        .status-failed {
+            color: var(--error);
+        }
+
+        .status-pending {
+            color: var(--text-muted);
+        }
+
+        .audio-player-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .player-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+
+        .player-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
+        }
+
+        .player-slider {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .player-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .player-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: monospace;
+            min-width: 75px;
+            text-align: right;
+        }
+
+        .btn-mini-action {
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .btn-mini-action:hover {
+            color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .lang-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: rgba(139, 92, 246, 0.2);
+            color: var(--primary);
+        }
+
+        /* Gift Icon */
+        .gift-icon-link {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            animation: shakeGift 2s ease-in-out infinite;
+            text-decoration: none;
+            margin-right: 5px;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .gift-icon-link:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
+        }
+
+        @keyframes shakeGift {
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            10% {
+                transform: rotate(-12deg);
+            }
+
+            20% {
+                transform: rotate(12deg);
+            }
+
+            30% {
+                transform: rotate(-8deg);
+            }
+
+            40% {
+                transform: rotate(8deg);
+            }
+
+            50% {
+                transform: rotate(0deg);
+            }
+        }
+
+        @media (max-width: 1000px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main-layout {
+                flex-direction: column;
+            }
+
+            .right-column {
+                position: static;
+                max-height: none;
+                width: 100%;
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Slim Top Nav -->
+    <nav class="slim-nav">
+        <div class="brand"><i class="fa-solid fa-wave-square"></i> 11<span>LABS</span></div>
+        <div class="user-info">
+            <div class="social-icons-container" id="headerSocialIcons"></div>
+            <a href="affiliate" class="gift-icon-link" title="Giới thiệu bạn bè - Nhận thưởng">
+                <i class="fa-solid fa-gift"></i>
+            </a>
+            <button onclick="openTeamModal()" class="logout-btn"
+                style="border: none; background: rgba(139, 92, 246, 0.15); color: var(--primary); margin-right: 5px;">
+                <i class="fa-solid fa-users"></i> <span class="btn-text">Nhóm</span>
+            </button>
+            <button onclick="window.location.href='profile'" class="logout-btn"
+                style="border: none; background: rgba(255,255,255,0.1); margin-right: 5px;">
+                <i class="fa-solid fa-user"></i> <span class="btn-text">Hồ sơ</span>
+            </button>
+            <button onclick="logout()" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> <span
+                    class="btn-text">Đăng xuất</span></button>
+        </div>
+    </nav>
+
+    <div class="app-body">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-user">
+                <div class="sidebar-avatar" id="sidebarAvatar">?</div>
+                <div class="sidebar-email" id="sidebarEmail">Loading...</div>
+                <span id="userPlanBadge" class="voice-tag" style="background: var(--primary); color: white;">-</span>
+            </div>
+
+            <div class="sidebar-section-label">Công cụ giọng nói</div>
+            <div class="sidebar-nav-item" onclick="window.location.href='customer'">
+                <i class="fa-solid fa-microphone-lines"></i> Văn bản thành giọng nói
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='customer'">
+                <i class="fa-regular fa-clone"></i> Nhân bản giọng nói
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='conversation'">
+                <i class="fa-solid fa-comments"></i> Hội thoại (Mới)
+            </div>
+            <div class="sidebar-nav-item active">
+                <i class="fa-solid fa-language"></i> Lồng tiếng tự động
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='voice_changer'">
+                <i class="fa-solid fa-water"></i> Thay đổi giọng nói
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='isolator'">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Tách giọng nói (Mới)
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='speech-to-text'">
+                <i class="fa-solid fa-file-lines"></i> Giọng nói → Văn bản (Mới)
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='music'">
+                <i class="fa-solid fa-music"></i> Sáng tác Nhạc AI (Mới)
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='sound-effect'">
+                <i class="fa-solid fa-volume-high"></i> Hiệu ứng âm thanh
+            </div>
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-section-label">Tài nguyên</div>
+            <div class="sidebar-nav-item" onclick="window.location.href='docs'">
+                <i class="fa-solid fa-book"></i> Tài liệu
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='api-docs'">
+                <i class="fa-solid fa-code"></i> Tài liệu API
+            </div>
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-section-label">Tài khoản</div>
+            <div class="sidebar-nav-item" onclick="window.location.href='customer?action=upgrade'">
+                <i class="fa-solid fa-crown" style="color:#f59e0b;"></i> Nâng cấp gói
+            </div>
+            <div class="sidebar-nav-item" onclick="window.location.href='customer?action=jobs'">
+                <i class="fa-solid fa-list-check"></i> Danh sách tác vụ
+            </div>
+
+            <div class="sidebar-bottom">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-size:0.75rem; font-weight:600; color:var(--text-muted);">TÍN DỤNG</span>
+                    <button onclick="doRefresh()" id="btnRefresh" title="Cập nhật"
+                        style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:0.8rem;">
+                        <i class="fa-solid fa-rotate" id="refreshIcon"></i>
+                    </button>
+                </div>
+                <div style="font-size:0.8rem; color:var(--text); font-weight:600; margin-bottom:6px;" id="quotaText">
+                    Còn lại: 0 / 0 ký tự</div>
+                <div class="quota-bar">
+                    <div id="quotaFill" class="quota-fill" style="width: 0%;"></div>
+                </div>
+                <div style="font-size:0.72rem; color:var(--text-muted);" id="pointsDisplay">Đang tải...</div>
+                <button onclick="window.location.href='customer?action=upgrade'" class="convert-btn upgrade-btn">
+                    <i class="fa-solid fa-crown"></i> Nâng cấp
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Area -->
+        <main class="main-area">
+            <div class="main-layout">
+                <!-- Left Column: Tool -->
+                <div class="left-column">
+                    <div style="margin-bottom: 20px;">
+                        <h1 class="header-title">🌍 Lồng Tiếng Tự Động</h1>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">Upload file audio — Hệ thống sẽ tự
+                            động
+                            dịch và lồng tiếng sang ngôn ngữ bạn chọn</p>
+                    </div>
+
+                    <div class="input-card">
+                        <div style="padding: 20px;">
+                            <!-- Upload Zone -->
+                            <div class="upload-zone" id="uploadZone"
+                                onclick="document.getElementById('fileInput').click()">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <div style="font-weight: 600; font-size: 1rem;">Kéo thả file hoặc click để chọn</div>
+                                <p>Hỗ trợ: MP3, WAV — Tối đa 500MB, 10 phút</p>
+                                <input type="file" id="fileInput" accept="audio/*,video/*" style="display:none"
+                                    onchange="handleFileSelect(event)">
+                            </div>
+                            <div class="file-info" id="fileInfo">
+                                <i class="fa-solid fa-file-audio"></i> <span id="fileName"></span>
+                                <span style="float:right; cursor:pointer; color:var(--error);"
+                                    onclick="removeFile()">✕</span>
+                            </div>
+
+                            <!-- Language Selection -->
+                            <div class="lang-row">
+                                <select id="sourceLang">
+                                    <option value="auto">🔍 Tự nhận dạng</option>
+                                    <option value="en">🇬🇧 English</option>
+                                    <option value="vi">🇻🇳 Tiếng Việt</option>
+                                    <option value="zh">🇨🇳 中文</option>
+                                    <option value="ja">🇯🇵 日本語</option>
+                                    <option value="ko">🇰🇷 한국어</option>
+                                    <option value="es">🇪🇸 Español</option>
+                                    <option value="fr">🇫🇷 Français</option>
+                                    <option value="de">🇩🇪 Deutsch</option>
+                                    <option value="pt">🇧🇷 Português</option>
+                                    <option value="ru">🇷🇺 Русский</option>
+                                    <option value="ar">🇸🇦 العربية</option>
+                                    <option value="hi">🇮🇳 हिन्दी</option>
+                                    <option value="it">🇮🇹 Italiano</option>
+                                    <option value="th">🇹🇭 ภาษาไทย</option>
+                                    <option value="id">🇮🇩 Indonesian</option>
+                                    <option value="tr">🇹🇷 Türkçe</option>
+                                    <option value="pl">🇵🇱 Polski</option>
+                                    <option value="nl">🇳🇱 Nederlands</option>
+                                </select>
+                                <span class="lang-arrow"><i class="fa-solid fa-arrow-right"></i></span>
+                                <select id="targetLang" onchange="onTargetLangChange()">
+                                    <option value="">Chọn ngôn ngữ đích...</option>
+                                    <option value="vi">🇻🇳 Tiếng Việt (tối đa 3 phút)</option>
+                                    <option value="en">🇬🇧 English</option>
+                                    <option value="zh">🇨🇳 中文</option>
+                                    <option value="ja">🇯🇵 日本語</option>
+                                    <option value="ko">🇰🇷 한국어</option>
+                                    <option value="es">🇪🇸 Español</option>
+                                    <option value="fr">🇫🇷 Français</option>
+                                    <option value="de">🇩🇪 Deutsch</option>
+                                    <option value="pt">🇧🇷 Português</option>
+                                    <option value="ru">🇷🇺 Русский</option>
+                                    <option value="ar">🇸🇦 العربية</option>
+                                    <option value="hi">🇮🇳 हिन्दी</option>
+                                    <option value="it">🇮🇹 Italiano</option>
+                                    <option value="th">🇹🇭 ภาษาไทย</option>
+                                    <option value="id">🇮🇩 Indonesian</option>
+                                    <option value="tr">🇹🇷 Türkçe</option>
+                                    <option value="pl">🇵🇱 Polski</option>
+                                    <option value="nl">🇳🇱 Nederlands</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="toolbar">
+                            <div style="color: var(--text-muted); font-size: 0.85rem;">
+                                <span style="color:var(--text-muted);">3,200 điểm/phút</span> · <span
+                                    style="color:#f59e0b;" id="maxDurationText">Tối đa 10 phút</span>
+                            </div>
+                            <button class="convert-btn" id="btnCompose" onclick="handleCompose()"
+                                style="padding: 10px 25px; font-size: 0.85rem;">
+                                <i class="fa-solid fa-language"></i> Tạo lồng tiếng
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: History -->
+                <aside class="right-column">
+                    <!-- Live Progress -->
+                    <div id="liveLogPanel"
+                        style="display:none; margin-bottom:20px; background:rgba(0,0,0,0.3); border:1px solid rgba(34,197,94,0.25); border-radius:12px; overflow:hidden;">
+                        <div
+                            style="display:flex; align-items:center; gap:8px; padding:12px 15px; border-bottom:1px solid rgba(255,255,255,0.06); background:rgba(34,197,94,0.08);">
+                            <i class="fa-solid fa-circle-notch fa-spin" id="liveLogSpinner" style="color:#22c55e;"></i>
+                            <span id="liveLogTitle" style="font-weight:700; font-size:0.85rem; color:#22c55e;">ĐANG XỬ
+                                LÝ</span>
+                            <span id="liveLogJobId"
+                                style="font-size:0.75rem; color:var(--text-muted); margin-left:auto;"></span>
+                        </div>
+                        <div id="liveLogLines" style="padding:10px 15px; font-size:0.8rem; color:var(--text-muted);">
+                            Đang gửi file lên hệ thống...
+                        </div>
+                    </div>
+
+                    <div style="display:flex; align-items:center; justify-content: space-between; margin-bottom:20px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <i class="fa-solid fa-clock-rotate-left" style="color:var(--text-muted);"></i>
+                            <span style="font-weight:600; font-size:0.95rem;">Lịch sử</span>
+                            <span id="historyTabCount"
+                                style="background:rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;">0</span>
+                        </div>
+                        <button onclick="clearAllHistory()" id="btnClearAllHistory" title="Xóa tất cả lịch sử"
+                            style="background:rgba(239, 68, 68, 0.1); color:var(--error); border:1px solid rgba(239, 68, 68, 0.3); padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.75rem; transition:0.2s; display:none;">
+                            <i class="fa-solid fa-trash-can"></i> Xóa tất cả
+                        </button>
+                    </div>
+                    <div id="historyList">
+                        <div style="text-align:center; color:var(--text-muted); font-size:0.85rem; padding: 30px 0;">
+                            <i class="fa-solid fa-inbox"
+                                style="font-size:2rem; margin-bottom:10px; display:block; opacity:0.3;"></i>
+                            Chưa có lịch sử
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </main>
+    </div>
+
+    <!-- Processing Overlay -->
+    <div class="overlay" id="overlay">
+        <div class="spinner" style="margin-bottom: 20px;"></div>
+        <p style="font-size: 0.95rem; font-weight: 600;">Đang gửi file...</p>
+    </div>
+
+    <script>
+        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost/api' : '/api';
+        let currentUser = null;
+        let selectedFile = null;
+        let selectedFileDuration = 0;
+        const MAX_DURATION_VI = 3;  // Tiếng Việt: max 3 phút (single chunk)
+        const MAX_DURATION_OTHER = 10;  // Ngôn ngữ khác: max 10 phút
+        function getMaxDuration() {
+            const tgt = document.getElementById('targetLang')?.value;
+            return tgt === 'vi' ? MAX_DURATION_VI : MAX_DURATION_OTHER;
+        }
+        function onTargetLangChange() {
+            const max = getMaxDuration();
+            document.getElementById('maxDurationText').textContent = `Tối đa ${max} phút`;
+            // Re-validate if file already selected
+            if (selectedFile && selectedFileDuration > max * 60) {
+                document.getElementById('btnCompose').disabled = true;
+                showToast(`File quá dài cho ngôn ngữ này (tối đa ${max} phút)`, 'error');
+            } else if (selectedFile) {
+                document.getElementById('btnCompose').disabled = false;
+            }
+        }
+        let pollingTimers = {};
+        let currentAudio = null;
+        const token = localStorage.getItem('auth_token');
+        if (!token) window.location.href = 'customer';
+
+        // ======= AUTH =======
+        function getToken() { return token; }
+        function logout() { localStorage.removeItem('auth_token'); window.location.href = 'customer'; }
+
+        async function updateUserInfo() {
+            try {
+                const res = await fetch('api/profile.php', { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    currentUser = data.user;
+                    const balance = data.user.quota_total - data.user.quota_used;
+                    const percent = Math.min(100, (balance / data.user.quota_total) * 100);
+
+                    document.getElementById('sidebarEmail').innerText = data.user.email;
+                    document.getElementById('sidebarAvatar').innerText = data.user.email[0].toUpperCase();
+                    document.getElementById('quotaText').innerText = `Còn lại: ${balance.toLocaleString()} / ${data.user.quota_total.toLocaleString()} ký tự`;
+                    document.getElementById('quotaFill').style.width = percent + '%';
+
+                    if (data.user.expires_at) {
+                        const exp = new Date(data.user.expires_at);
+                        document.getElementById('pointsDisplay').innerText = `Hết hạn: ${exp.getDate()}/${exp.getMonth() + 1}/${exp.getFullYear()}`;
+                    } else {
+                        document.getElementById('pointsDisplay').innerText = '';
+                    }
+
+                    const planVal = (data.user.custom_plan_name || data.user.plan_name || data.user.plan || 'Free').toLowerCase();
+                    const badgeEl = document.getElementById('userPlanBadge');
+                    badgeEl.innerText = planVal.toUpperCase();
+                    if (planVal.includes('supper')) {
+                        badgeEl.style.background = 'linear-gradient(135deg, #d4af37, #f3e5ab)';
+                        badgeEl.style.color = '#000';
+                    } else if (planVal === 'basic') {
+                        badgeEl.style.background = '#3b82f6';
+                        badgeEl.style.color = 'white';
+                    } else {
+                        badgeEl.style.background = 'var(--primary)';
+                        badgeEl.style.color = 'white';
+                    }
+                }
+            } catch (e) { }
+        }
+
+        async function doRefresh() {
+            const icon = document.getElementById('refreshIcon');
+            icon.classList.add('fa-spin');
+            await updateUserInfo();
+            setTimeout(() => icon.classList.remove('fa-spin'), 500);
+        }
+
+        // ======= FILE HANDLING =======
+        const uploadZone = document.getElementById('uploadZone');
+
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+        uploadZone.addEventListener('dragleave', () => { uploadZone.classList.remove('dragover'); });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                selectedFile = e.dataTransfer.files[0];
+                showFileInfo(selectedFile);
+            }
+        });
+
+        function handleFileSelect(event) {
+            selectedFile = event.target.files[0];
+            if (selectedFile) showFileInfo(selectedFile);
+        }
+
+        function showFileInfo(file) {
+            document.getElementById('fileInfo').style.display = 'block';
+            document.getElementById('fileName').innerText = `${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB) — Đang đo thời lượng...`;
+            uploadZone.style.display = 'none';
+
+            // Get audio duration
+            const url = URL.createObjectURL(file);
+            const audio = new Audio(url);
+            let resolved = false;
+
+            function onDuration(dur) {
+                if (resolved) return;
+                resolved = true;
+                selectedFileDuration = dur;
+                URL.revokeObjectURL(url);
+                const maxMin = getMaxDuration();
+                const mins = Math.floor(dur / 60);
+                const secs = Math.floor(dur % 60);
+                const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                const tooLong = dur > maxMin * 60;
+                document.getElementById('fileName').innerHTML = `${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB) · <span style="color:${tooLong ? 'var(--error)' : '#22c55e'}">${durationStr}</span>${tooLong ? ` <span style="color:var(--error);font-size:0.75rem">⚠️ Quá ${maxMin} phút!</span>` : ''}`;
+            }
+
+            audio.addEventListener('loadedmetadata', () => onDuration(audio.duration));
+            // Fallback: some browsers need to load more data
+            audio.addEventListener('durationchange', () => {
+                if (audio.duration && audio.duration !== Infinity) onDuration(audio.duration);
+            });
+            audio.addEventListener('error', () => {
+                URL.revokeObjectURL(url);
+                selectedFileDuration = 0;
+                document.getElementById('fileName').innerText = `${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB) — Không đo được thời lượng`;
+            });
+            // Timeout fallback: if no event fires in 5s, show file without duration
+            setTimeout(() => {
+                if (!resolved) {
+                    resolved = true;
+                    URL.revokeObjectURL(url);
+                    selectedFileDuration = 0;
+                    document.getElementById('fileName').innerText = `${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+                }
+            }, 5000);
+        }
+
+        function removeFile() {
+            selectedFile = null;
+            selectedFileDuration = 0;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileInfo').style.display = 'none';
+            uploadZone.style.display = '';
+        }
+
+        // ======= COMPOSE =======
+        async function handleCompose() {
+            const targetLang = document.getElementById('targetLang').value;
+            const maxMin = getMaxDuration();
+            if (!targetLang) { alert('Vui lòng chọn ngôn ngữ đích'); return; }
+            if (!selectedFile) { alert('Vui lòng upload file'); return; }
+            if (selectedFileDuration > maxMin * 60) {
+                alert(`File quá dài (${Math.floor(selectedFileDuration / 60)} phút ${Math.floor(selectedFileDuration % 60)} giây). Tối đa ${maxMin} phút${targetLang === 'vi' ? ' cho tiếng Việt' : ''}.`);
+                return;
+            }
+
+            const btn = document.getElementById('btnCompose');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Đang gửi...';
+            document.getElementById('overlay').style.display = 'flex';
+
+            try {
+                const formData = new FormData();
+                formData.append('source_lang', document.getElementById('sourceLang').value);
+                formData.append('target_lang', targetLang);
+                formData.append('name', selectedFile.name);
+                formData.append('duration', selectedFileDuration || 0);
+                formData.append('file', selectedFile);
+
+                const res = await fetch(`${API_BASE}/dubbing/compose.php`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + getToken() },
+                    body: formData
+                });
+
+                const data = await res.json();
+                document.getElementById('overlay').style.display = 'none';
+
+                if (data.status === 'success') {
+                    // Show live log
+                    const panel = document.getElementById('liveLogPanel');
+                    panel.style.display = 'block';
+                    document.getElementById('liveLogJobId').innerText = data.job_id;
+                    document.getElementById('liveLogLines').innerHTML = `
+                        <div>✅ Job đã tạo: ${data.job_id}</div>
+                        <div>📡 Đang chờ worker xử lý...</div>
+                    `;
+
+                    // Start polling
+                    startPolling(data.job_id);
+
+                    // Refresh quota
+                    doRefresh();
+                    loadHistory();
+                } else {
+                    alert('❌ ' + (data.error || 'Lỗi'));
+                }
+            } catch (e) {
+                document.getElementById('overlay').style.display = 'none';
+                alert('❌ Lỗi kết nối: ' + e.message);
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-language"></i> Tạo lồng tiếng';
+        }
+
+        // ======= POLLING =======
+        function startPolling(jobId) {
+            if (pollingTimers[jobId]) clearInterval(pollingTimers[jobId]);
+            pollingTimers[jobId] = setInterval(async () => {
+                try {
+                    const res = await fetch(`${API_BASE}/dubbing/progress.php?job_id=${jobId}`);
+                    const data = await res.json();
+
+                    if (data.status === 'success' && data.job) {
+                        const job = data.job;
+                        if (job.status === 'dubbed') {
+                            clearInterval(pollingTimers[jobId]);
+                            delete pollingTimers[jobId];
+
+                            // Update live log
+                            document.getElementById('liveLogSpinner').className = 'fa-solid fa-circle-check';
+                            document.getElementById('liveLogSpinner').style.color = '#22c55e';
+                            document.getElementById('liveLogTitle').innerText = 'HOÀN THÀNH';
+                            document.getElementById('liveLogLines').innerHTML = `
+                                <div style="color:var(--success);">✅ Lồng tiếng hoàn tất!</div>
+                            `;
+                            setTimeout(() => {
+                                document.getElementById('liveLogPanel').style.display = 'none';
+                            }, 3000);
+
+                            loadHistory();
+                            doRefresh();
+                        } else if (job.status === 'failed') {
+                            clearInterval(pollingTimers[jobId]);
+                            delete pollingTimers[jobId];
+
+                            document.getElementById('liveLogSpinner').className = 'fa-solid fa-circle-xmark';
+                            document.getElementById('liveLogSpinner').style.color = 'var(--error)';
+                            document.getElementById('liveLogTitle').innerText = 'THẤT BẠI';
+                            document.getElementById('liveLogTitle').style.color = 'var(--error)';
+                            document.getElementById('liveLogLines').innerHTML = `
+                                <div style="color:var(--error);">❌ ${job.error_message || 'Unknown error'}</div>
+                            `;
+                            loadHistory();
+                            doRefresh();
+                        } else if (job.status === 'processing' || job.status === 'pending') {
+                            // Update live progress
+                            const pct = job.progress || 0;
+                            const msg = job.progress_message || 'Đang xử lý...';
+                            document.getElementById('liveLogLines').innerHTML = `
+                                <div>📡 ${msg}</div>
+                                <div style="margin-top:6px;">
+                                    <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:3px;">
+                                        <span style="color:var(--text-muted);">Tiến trình</span>
+                                        <span style="color:#22c55e; font-weight:700;">${pct}%</span>
+                                    </div>
+                                    <div style="height:6px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden;">
+                                        <div style="height:100%; width:${pct}%; background:linear-gradient(90deg,#22c55e,#3b82f6); border-radius:4px; transition:width 0.5s ease;"></div>
+                                    </div>
+                                </div>
+                            `;
+                            // Refresh history cards
+                            loadHistory();
+                        }
+                    }
+                } catch (e) { console.log('Polling error:', e); }
+            }, 5000); // Poll every 5 seconds
+        }
+
+        // ======= HISTORY =======
+        async function loadHistory() {
+            try {
+                const res = await fetch(`${API_BASE}/dubbing/list.php`, {
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    renderHistory(data.jobs);
+                    document.getElementById('historyTabCount').innerText = data.jobs.length;
+                    document.getElementById('btnClearAllHistory').style.display = data.jobs.length > 0 ? '' : 'none';
+                }
+            } catch (e) { console.log('Load history error:', e); }
+        }
+
+        function renderHistory(jobs) {
+            const container = document.getElementById('historyList');
+            if (!jobs.length) {
+                container.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-size:0.85rem; padding: 30px 0;">
+                    <i class="fa-solid fa-inbox" style="font-size:2rem; margin-bottom:10px; display:block; opacity:0.3;"></i>
+                    Chưa có lịch sử</div>`;
+                return;
+            }
+
+            const langNames = { vi: 'Việt', en: 'English', zh: '中文', ja: '日本語', ko: '한국어', es: 'Español', fr: 'Français', de: 'Deutsch', pt: 'Português', ru: 'Русский', ar: 'العربية', hi: 'हिन्दी', it: 'Italiano', th: 'ไทย', id: 'Indonesia', tr: 'Türkçe', pl: 'Polski', nl: 'Nederlands' };
+
+            container.innerHTML = jobs.map(job => {
+                const date = new Date(job.created_at).toLocaleString('vi-VN');
+                const srcLang = job.source_lang === 'auto' ? 'Auto' : (langNames[job.source_lang] || job.source_lang);
+                const tgtLang = langNames[job.target_lang] || job.target_lang;
+
+                let statusHtml = '';
+                if (job.status === 'dubbed') statusHtml = '<span class="job-status status-dubbed"><i class="fa-solid fa-circle-check"></i> Hoàn thành</span>';
+                else if (job.status === 'processing') {
+                    const pct = job.progress || 0;
+                    statusHtml = `<span class="job-status status-processing"><i class="fa-solid fa-circle-notch fa-spin"></i> ${pct}%</span>`;
+                }
+                else if (job.status === 'pending') statusHtml = '<span class="job-status status-pending"><i class="fa-solid fa-clock"></i> Đang chờ</span>';
+                else statusHtml = `<span class="job-status status-failed"><i class="fa-solid fa-circle-xmark"></i> Lỗi</span>`;
+
+                let playerHtml = '';
+                if (job.status === 'dubbed' && job.result_url) {
+                    const uid = 'player_' + job.id;
+                    playerHtml = `
+                        <div class="audio-player-row">
+                            <button class="player-btn" onclick="togglePlay('${uid}', '${job.result_url}')">
+                                <i class="fa-solid fa-play" id="icon_${uid}"></i>
+                            </button>
+                            <input type="range" class="player-slider" id="slider_${uid}" value="0" min="0" max="100" oninput="seekAudio('${uid}', this.value)">
+                            <span class="player-time" id="time_${uid}">0:00 / 0:00</span>
+                            <a href="${job.result_url}" download class="btn-mini-action" title="Tải xuống"><i class="fa-solid fa-download"></i></a>
+                        </div>`;
+                }
+
+                let errorHtml = '';
+                if (job.status === 'failed' && job.error_message) {
+                    errorHtml = `<div style="margin-top:8px; font-size:0.78rem; color:var(--error); background:rgba(239,68,68,0.08); padding:6px 10px; border-radius:6px;">${job.error_message}</div>`;
+                }
+
+                // Start polling for processing jobs
+                if ((job.status === 'processing' || job.status === 'pending') && !pollingTimers[job.id]) {
+                    startPolling(job.id);
+                }
+
+                let progressHtml = '';
+                if ((job.status === 'processing' || job.status === 'pending') && job.progress !== undefined) {
+                    const pct = job.progress || 0;
+                    const msg = job.progress_message || (job.status === 'pending' ? 'Đang chờ worker...' : 'Đang xử lý...');
+                    progressHtml = `
+                        <div style="margin-top:8px;">
+                            <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--text-muted); margin-bottom:3px;">
+                                <span>${msg}</span>
+                                <span style="color:#22c55e; font-weight:600;">${pct}%</span>
+                            </div>
+                            <div style="height:4px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden;">
+                                <div style="height:100%; width:${pct}%; background:linear-gradient(90deg,#22c55e,#3b82f6); border-radius:4px; transition:width 0.5s ease;"></div>
+                            </div>
+                        </div>`;
+                }
+
+                return `<div class="job-card" style="animation: slideUp 0.3s ease;">
+                    <div class="job-header">
+                        <span class="job-filename-display" title="${job.original_filename || job.name}">${job.original_filename || job.name}</span>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            ${(job.status === 'pending' || job.status === 'processing') ? `<button onclick="cancelJob('${job.id}')" title="Hủy job" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:0.85rem; padding:2px 6px;"><i class="fa-solid fa-xmark"></i></button>` : ''}
+                            ${statusHtml}
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center; margin-bottom:5px;">
+                        <span class="lang-badge">${srcLang} → ${tgtLang}</span>
+                        <span style="font-size:0.7rem; color:var(--text-muted);">${(() => {
+                        const dur = parseFloat(job.estimated_duration_sec) || 0;
+                        if (dur > 0) {
+                            const m = Math.floor(dur / 60);
+                            const s = Math.floor(dur % 60);
+                            return (m > 0 ? m + ':' + String(s).padStart(2, '0') : s + 's') + ' • ' + (job.points_used?.toLocaleString() || 0) + ' điểm';
+                        }
+                        return (job.points_used?.toLocaleString() || 0) + ' điểm';
+                    })()}</span>
+                    </div>
+                    <div class="job-timestamp">${date}</div>
+                    ${progressHtml}
+                    ${playerHtml}
+                    ${errorHtml}
+                </div>`;
+            }).join('');
+        }
+
+        // ======= CANCEL JOB =======
+        async function cancelJob(jobId) {
+            if (!confirm('Hủy job này? Điểm sẽ được hoàn lại.')) return;
+            try {
+                const res = await fetch(`${API_BASE}/dubbing/cancel.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+                    body: JSON.stringify({ action: 'cancel', job_id: jobId })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showToast(`Đã hủy! Hoàn lại ${data.refunded?.toLocaleString() || 0} điểm`, 'success');
+                    if (pollingTimers[jobId]) { clearInterval(pollingTimers[jobId]); delete pollingTimers[jobId]; }
+                    loadHistory();
+                    updateUserInfo();
+                } else {
+                    showToast(data.error || 'Không thể hủy', 'error');
+                }
+            } catch (e) { showToast('Lỗi kết nối', 'error'); }
+        }
+
+        // ======= AUDIO PLAYER =======
+        function togglePlay(uid, url) {
+            const icon = document.getElementById('icon_' + uid);
+            if (currentAudio && currentAudio._uid === uid) {
+                if (currentAudio.paused) {
+                    currentAudio.play();
+                    icon.className = 'fa-solid fa-pause';
+                } else {
+                    currentAudio.pause();
+                    icon.className = 'fa-solid fa-play';
+                }
+                return;
+            }
+            if (currentAudio) {
+                currentAudio.pause();
+                const oldIcon = document.getElementById('icon_' + currentAudio._uid);
+                if (oldIcon) oldIcon.className = 'fa-solid fa-play';
+            }
+            currentAudio = new Audio(url);
+            currentAudio._uid = uid;
+            currentAudio.play();
+            icon.className = 'fa-solid fa-pause';
+
+            currentAudio.addEventListener('timeupdate', () => {
+                const slider = document.getElementById('slider_' + uid);
+                const timeEl = document.getElementById('time_' + uid);
+                if (slider && currentAudio.duration) {
+                    slider.value = (currentAudio.currentTime / currentAudio.duration) * 100;
+                    timeEl.innerText = formatTime(currentAudio.currentTime) + ' / ' + formatTime(currentAudio.duration);
+                }
+            });
+            currentAudio.addEventListener('ended', () => { icon.className = 'fa-solid fa-play'; });
+        }
+
+        function seekAudio(uid, val) {
+            if (currentAudio && currentAudio._uid === uid && currentAudio.duration) {
+                currentAudio.currentTime = (val / 100) * currentAudio.duration;
+            }
+        }
+
+        function formatTime(s) {
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            return m + ':' + (sec < 10 ? '0' : '') + sec;
+        }
+
+        // ======= CLEAR HISTORY =======
+        async function clearAllHistory() {
+            if (!confirm('Xóa tất cả lịch sử lồng tiếng?')) return;
+            try {
+                await fetch(`${API_BASE}/dubbing/list.php`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+                loadHistory();
+            } catch (e) { alert('Lỗi: ' + e.message); }
+        }
+
+        // ======= SOCIAL ICONS =======
+        async function loadSocialIcons() {
+            try {
+                const res = await fetch(`${API_BASE}/social_settings.php`);
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const s = data.settings;
+                    let html = '';
+                    if (s.zalo) html += `<a href="${s.zalo}" target="_blank" class="social-icon zalo" title="Zalo"><img src="https://img.icons8.com/ios-filled/50/ffffff/zalo.png" style="width:16px;height:16px;filter:brightness(0) invert(1);"></a>`;
+                    if (s.telegram) html += `<a href="${s.telegram}" target="_blank" class="social-icon telegram" title="Telegram"><i class="fa-brands fa-telegram"></i></a>`;
+                    if (s.facebook) html += `<a href="${s.facebook}" target="_blank" class="social-icon facebook" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>`;
+                    if (s.youtube) html += `<a href="${s.youtube}" target="_blank" class="social-icon youtube" title="YouTube"><i class="fa-brands fa-youtube"></i></a>`;
+                    document.getElementById('headerSocialIcons').innerHTML = html;
+                }
+            } catch (e) { }
+        }
+
+        function openTeamModal() { window.location.href = 'customer?action=team'; }
+
+        // ======= INIT =======
+        window.addEventListener('DOMContentLoaded', () => {
+            updateUserInfo();
+            loadHistory();
+            loadSocialIcons();
+        });
+    </script>
+</body>
+
+</html>

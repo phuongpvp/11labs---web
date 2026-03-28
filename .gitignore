@@ -1,0 +1,23 @@
+# Config files with secrets
+api/config.php
+white-label-tts/api/config.php
+
+# Archives
+*.rar
+*.zip
+*.7z
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Temp files
+*.tmp
+*.bak

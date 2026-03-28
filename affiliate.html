@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="icon.png">
+    <title>Giới thiệu bạn bè - 11LABS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-hover: #7c3aed;
+            --bg: #09090b;
+            --surface: #18181b;
+            --border: #27272a;
+            --text: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --accent: #ec4899;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, #09090b);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 30px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 i {
+            color: var(--primary);
+        }
+
+        .back-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--text);
+        }
+
+        .card {
+            background: rgba(24, 24, 27, 0.8);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(12px);
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: var(--primary);
+        }
+
+        .card-desc {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+            line-height: 1.6;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-item {
+            background: rgba(139, 92, 246, 0.06);
+            border: 1px solid rgba(139, 92, 246, 0.15);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-item .label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-item .value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .stat-item .value.accent {
+            color: var(--accent);
+        }
+
+        .stat-item .value.success {
+            color: var(--success);
+        }
+
+        /* Referral Link */
+        .ref-link-box {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 6px 6px 6px 16px;
+        }
+
+        .ref-link-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-size: 0.85rem;
+            font-family: monospace;
+            outline: none;
+        }
+
+        .ref-link-box button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.82rem;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .ref-link-box button:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Table */
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+
+        thead th {
+            text-align: left;
+            padding: 12px 16px;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        tbody td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(39. 39, 42, 0.5);
+            color: var(--text);
+        }
+
+        tbody tr {
+            transition: 0.15s;
+        }
+
+        tbody tr:hover {
+            background: rgba(139, 92, 246, 0.04);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(34, 197, 94, 0.12);
+            color: var(--success);
+        }
+
+        .badge-pending {
+            background: rgba(234, 179, 8, 0.12);
+            color: #eab308;
+        }
+
+        .badge-inactive {
+            background: rgba(161, 161, 170, 0.12);
+            color: var(--text-muted);
+        }
+
+        .bonus-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--success);
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            display: block;
+            opacity: 0.3;
+        }
+
+        /* How it works */
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .step {
+            text-align: center;
+            padding: 20px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            border: 1px solid rgba(139, 92, 246, 0.08);
+        }
+
+        .step .num {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+
+        .step .title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 6px;
+        }
+
+        .step .desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        @media (max-width: 768px) {
+
+            .stats-grid,
+            .steps {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fa-solid fa-gift"></i> Giới thiệu bạn bè</h1>
+            <a href="customer" class="back-link"><i class="fa-solid fa-arrow-left"></i> Quay lại Dashboard</a>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="label">Đã giới thiệu</div>
+                <div class="value" id="referralCount">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="label">Đã thanh toán</div>
+                <div class="value accent" id="paidCount">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="label">Tổng điểm thưởng</div>
+                <div class="value success" id="totalBonus">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="label">Doanh thu từ giới thiệu</div>
+                <div class="value" style="color: #f59e0b;" id="totalRevenue">0đ</div>
+            </div>
+        </div>
+
+        <!-- Referral Link -->
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-link"></i> Link giới thiệu của bạn</div>
+            <div class="card-desc">
+                Chia sẻ link này cho bạn bè. Khi họ đăng ký và thanh toán gói cước, <strong>cả hai</strong> đều nhận
+                được
+                <span style="color:var(--success); font-weight:700;" id="displayRate">...%</span> điểm thưởng!
+            </div>
+            <div class="ref-link-box">
+                <input type="text" id="referralLink" readonly value="Đang tải...">
+                <button onclick="copyLink()"><i class="fa-solid fa-copy"></i> Copy</button>
+            </div>
+        </div>
+
+        <!-- How it works -->
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-circle-question"></i> Cách thức hoạt động</div>
+            <div class="steps">
+                <div class="step">
+                    <div class="num">1</div>
+                    <div class="title">Chia sẻ link</div>
+                    <div class="desc">Gửi link giới thiệu cho bạn bè, đồng nghiệp</div>
+                </div>
+                <div class="step">
+                    <div class="num">2</div>
+                    <div class="title">Bạn bè đăng ký</div>
+                    <div class="desc">Họ tạo tài khoản và mua gói cước bất kỳ</div>
+                </div>
+                <div class="step">
+                    <div class="num">3</div>
+                    <div class="title">Cả hai nhận thưởng</div>
+                    <div class="desc">Cả bạn và bạn bè đều được cộng thêm điểm thưởng vĩnh viễn</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Referred Users -->
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-users"></i> Danh sách người đã giới thiệu</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Ngày đăng ký</th>
+                            <th>Gói cước</th>
+                            <th>Trạng thái</th>
+                            <th>Điểm thưởng</th>
+                        </tr>
+                    </thead>
+                    <tbody id="referralTable">
+                        <tr>
+                            <td colspan="5" class="empty-state"><i class="fa-solid fa-user-plus"></i>Chưa giới thiệu ai.
+                                Hãy chia sẻ link!</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Revenue Payments -->
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-coins" style="color: #f59e0b;"></i> Doanh thu từ giới thiệu</div>
+            <div class="card-desc">Danh sách các giao dịch thanh toán từ người bạn đã giới thiệu</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Gói cước</th>
+                            <th>Số tiền</th>
+                            <th>Ngày thanh toán</th>
+                        </tr>
+                    </thead>
+                    <tbody id="revenueTable">
+                        <tr>
+                            <td colspan="4" class="empty-state"><i class="fa-solid fa-receipt"></i>Chưa có giao dịch nào từ người giới thiệu.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'api';
+        const token = localStorage.getItem('auth_token');
+        if (!token) window.location.href = 'customer';
+
+        async function loadData() {
+            try {
+                const res = await fetch(`${API_BASE}/affiliate.php`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+
+                const info = data.data;
+
+                // Stats
+                document.getElementById('referralCount').textContent = info.referral_count;
+                document.getElementById('paidCount').textContent = info.paid_count;
+                document.getElementById('totalBonus').textContent = formatNumber(info.total_bonus);
+                document.getElementById('referralLink').value = info.referral_link;
+                document.getElementById('displayRate').textContent = info.bonus_rate + '%';
+
+                // Table
+                const tbody = document.getElementById('referralTable');
+                if (!info.referrals || info.referrals.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fa-solid fa-user-plus"></i>Chưa giới thiệu ai. Hãy chia sẻ link!</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = info.referrals.map(r => {
+                    const date = new Date(r.created_at).toLocaleDateString('vi-VN');
+                    const plan = r.plan ? r.plan.charAt(0).toUpperCase() + r.plan.slice(1) : 'Trial';
+                    const customName = r.custom_plan_name || plan;
+
+                    let statusBadge = '';
+                    if (r.status === 'active') {
+                        statusBadge = '<span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> Đã thanh toán</span>';
+                    } else if (r.status === 'pending') {
+                        statusBadge = '<span class="badge badge-pending"><i class="fa-solid fa-clock"></i> Chờ duyệt</span>';
+                    } else {
+                        statusBadge = '<span class="badge badge-inactive"><i class="fa-solid fa-circle-minus"></i> ' + (r.status || 'Chưa TT') + '</span>';
+                    }
+
+                    const bonus = r.bonus_given > 0
+                        ? `<span class="bonus-tag"><i class="fa-solid fa-gift"></i> +${formatNumber(r.bonus_given)}</span>`
+                        : '<span style="color:var(--text-muted); font-size:0.8rem;">—</span>';
+
+                    return `<tr>
+                        <td>${maskEmail(r.email)}</td>
+                        <td>${date}</td>
+                        <td>${customName}</td>
+                        <td>${statusBadge}</td>
+                        <td>${bonus}</td>
+                    </tr>`;
+                }).join('');
+
+                // Revenue table
+                const revTbody = document.getElementById('revenueTable');
+                document.getElementById('totalRevenue').textContent = formatNumber(info.total_revenue) + 'đ';
+
+                if (!info.revenue_payments || info.revenue_payments.length === 0) {
+                    revTbody.innerHTML = '<tr><td colspan="4" class="empty-state"><i class="fa-solid fa-receipt"></i>Chưa có giao dịch nào từ người giới thiệu.</td></tr>';
+                } else {
+                    revTbody.innerHTML = info.revenue_payments.map(p => {
+                        const date = new Date(p.created_at).toLocaleDateString('vi-VN');
+                        const plan = (p.plan_id || 'N/A').toUpperCase();
+                        return `<tr>
+                            <td>${maskEmail(p.email)}</td>
+                            <td><span class="badge badge-success">${plan}</span></td>
+                            <td style="color: #f59e0b; font-weight: 700;">${formatNumber(p.amount)}đ</td>
+                            <td>${date}</td>
+                        </tr>`;
+                    }).join('');
+                }
+
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function maskEmail(email) {
+            if (!email) return '—';
+            const [local, domain] = email.split('@');
+            if (local.length <= 3) return local[0] + '***@' + domain;
+            return local.substring(0, 3) + '***@' + domain;
+        }
+
+        function formatNumber(n) {
+            return (n || 0).toLocaleString('vi-VN');
+        }
+
+        function copyLink() {
+            const input = document.getElementById('referralLink');
+            input.select();
+            navigator.clipboard.writeText(input.value).then(() => {
+                const btn = input.nextElementSibling;
+                const orig = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã copy!';
+                btn.style.background = 'var(--success)';
+                setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; }, 2000);
+            });
+        }
+
+        loadData();
+    </script>
+</body>
+
+</html>

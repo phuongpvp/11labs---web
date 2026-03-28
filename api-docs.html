@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="icon.png">
+    <title>11LABS API - Tài liệu dành cho nhà phát triển</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-dim: rgba(139, 92, 246, 0.15);
+            --secondary: #ec4899;
+            --accent: #06b6d4;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --bg: #09090b;
+            --surface: #18181b;
+            --surface-2: #1f1f23;
+            --border: #27272a;
+            --text: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --code-bg: #0d1117;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, #1e1b4b 0%, var(--bg) 60%);
+            padding: 80px 20px 60px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero .badge {
+            display: inline-block;
+            background: var(--primary-dim);
+            color: var(--primary);
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(to right, #fff, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto 30px;
+        }
+
+        .hero-btns {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .hero-btns a {
+            padding: 10px 24px;
+            border-radius: 100px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: 0.3s;
+        }
+
+        .btn-primary-h {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-outline-h {
+            border: 1px solid var(--border);
+            color: white;
+        }
+
+        .btn-outline-h:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Layout */
+        .docs-layout {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            min-height: calc(100vh - 200px);
+        }
+
+        .docs-sidebar {
+            width: 260px;
+            border-right: 1px solid var(--border);
+            padding: 30px 20px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .docs-sidebar h3 {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin: 20px 0 10px;
+        }
+
+        .docs-sidebar h3:first-child {
+            margin-top: 0;
+        }
+
+        .docs-sidebar a {
+            display: block;
+            padding: 8px 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            transition: 0.2s;
+            font-weight: 500;
+        }
+
+        .docs-sidebar a:hover,
+        .docs-sidebar a.active {
+            color: var(--text);
+            background: var(--primary-dim);
+        }
+
+        .docs-sidebar a i {
+            width: 18px;
+            margin-right: 6px;
+            font-size: 0.8rem;
+        }
+
+        .docs-content {
+            flex: 1;
+            padding: 40px 50px;
+            max-width: 900px;
+        }
+
+        /* Sections */
+        .doc-section {
+            margin-bottom: 60px;
+            scroll-margin-top: 20px;
+        }
+
+        .doc-section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .doc-section h3 {
+            font-size: 1.2rem;
+            margin: 25px 0 10px;
+            color: var(--primary);
+        }
+
+        .doc-section p {
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        /* Endpoint cards */
+        .endpoint-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin: 20px 0 30px;
+            overflow: hidden;
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: var(--surface-2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .method-badge {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .method-get {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success);
+        }
+
+        .method-post {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+        }
+
+        .endpoint-url {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+
+        .endpoint-body {
+            padding: 20px;
+        }
+
+        /* Tables */
+        .params-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        .params-table th {
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .params-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.9rem;
+        }
+
+        .params-table code {
+            background: var(--code-bg);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #e2e8f0;
+        }
+
+        .param-required {
+            color: var(--error);
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .param-optional {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: var(--code-bg);
+            border: 1px solid #21262d;
+            border-radius: 8px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            background: #161b22;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .code-lang {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .code-copy {
+            background: none;
+            border: 1px solid #30363d;
+            color: var(--text-muted);
+            padding: 3px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: 0.2s;
+        }
+
+        .code-copy:hover {
+            color: white;
+            border-color: #555;
+        }
+
+        .code-content {
+            padding: 16px;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #e6edf3;
+        }
+
+        .code-content .comment {
+            color: #8b949e;
+        }
+
+        .code-content .string {
+            color: #a5d6ff;
+        }
+
+        .code-content .key {
+            color: #ff7b72;
+        }
+
+        .code-content .number {
+            color: #79c0ff;
+        }
+
+        /* Response block */
+        .response-block {
+            background: var(--surface-2);
+            border-left: 3px solid var(--success);
+            border-radius: 0 8px 8px 0;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+
+        .response-block.error {
+            border-left-color: var(--error);
+        }
+
+        .response-block pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: #e6edf3;
+            white-space: pre-wrap;
+        }
+
+        /* Info boxes */
+        .info-box {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .info-box i {
+            margin-top: 3px;
+            flex-shrink: 0;
+        }
+
+        .info-box.tip {
+            background: rgba(34, 197, 94, 0.08);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .info-box.tip i {
+            color: var(--success);
+        }
+
+        .info-box.warning {
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .info-box.warning i {
+            color: var(--warning);
+        }
+
+        .info-box.info {
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .info-box.info i {
+            color: var(--primary);
+        }
+
+        /* Steps */
+        .flow-steps {
+            display: flex;
+            gap: 0;
+            margin: 20px 0 30px;
+            flex-wrap: wrap;
+        }
+
+        .flow-step {
+            flex: 1;
+            min-width: 150px;
+            padding: 20px 15px;
+            text-align: center;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .flow-step:first-child {
+            border-radius: 10px 0 0 10px;
+        }
+
+        .flow-step:last-child {
+            border-radius: 0 10px 10px 0;
+        }
+
+        .flow-step .step-num {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .flow-step .step-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }
+
+        .flow-step .step-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .flow-step::after {
+            content: '→';
+            position: absolute;
+            right: -13px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            color: var(--primary);
+            z-index: 1;
+        }
+
+        .flow-step:last-child::after {
+            display: none;
+        }
+
+        /* Back button */
+        .back-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            z-index: 100;
+            transition: 0.2s;
+        }
+
+        .back-link:hover {
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .docs-sidebar {
+                display: none;
+            }
+
+            .docs-content {
+                padding: 20px;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .flow-steps {
+                flex-direction: column;
+            }
+
+            .flow-step {
+                border-radius: 8px !important;
+            }
+
+            .flow-step::after {
+                display: none;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="customer" class="back-link"><i class="fa-solid fa-arrow-left"></i> Quay lại</a>
+
+    <!-- Hero -->
+    <div class="hero">
+        <span class="badge"><i class="fa-solid fa-code"></i> Developer API</span>
+        <h1>11LABS API</h1>
+        <p>Tích hợp Text-to-Speech AI vào ứng dụng của bạn chỉ với vài dòng code. Hỗ trợ hàng ngàn giọng đọc đa ngôn
+            ngữ.</p>
+        <div class="hero-btns">
+            <a href="#quickstart" class="btn-primary-h">Bắt đầu nhanh</a>
+            <a href="api/external/v1/test_tool.php" target="_blank" class="btn-outline-h"><i
+                    class="fa-solid fa-flask"></i> API Playground</a>
+        </div>
+    </div>
+
+    <!-- Docs Layout -->
+    <div class="docs-layout">
+        <!-- Sidebar -->
+        <nav class="docs-sidebar">
+            <h3>Bắt đầu</h3>
+            <a href="#overview"><i class="fa-solid fa-book"></i> Tổng quan</a>
+            <a href="#authentication"><i class="fa-solid fa-key"></i> Xác thực</a>
+            <a href="#quickstart"><i class="fa-solid fa-rocket"></i> Bắt đầu nhanh</a>
+
+            <h3>API Endpoints</h3>
+            <a href="#ep-user"><i class="fa-solid fa-user"></i> Thông tin tài khoản</a>
+            <a href="#ep-voices"><i class="fa-solid fa-microphone"></i> Danh sách giọng</a>
+            <a href="#ep-tts"><i class="fa-solid fa-play"></i> Tạo giọng nói</a>
+            <a href="#ep-status"><i class="fa-solid fa-circle-check"></i> Kiểm tra trạng thái</a>
+
+            <h3>Nâng cao</h3>
+            <a href="#batch"><i class="fa-solid fa-layer-group"></i> Xử lý hàng loạt</a>
+            <a href="#errors"><i class="fa-solid fa-triangle-exclamation"></i> Mã lỗi</a>
+        </nav>
+
+        <!-- Content -->
+        <main class="docs-content">
+
+            <!-- Overview -->
+            <section class="doc-section" id="overview">
+                <h2><i class="fa-solid fa-book" style="color:var(--primary);"></i> Tổng quan</h2>
+                <p>11LABS API cho phép bạn chuyển đổi văn bản thành giọng nói AI chất lượng cao một cách tự động. API sử
+                    dụng kiến trúc REST, trả về JSON, và hỗ trợ CORS.</p>
+
+                <div class="info-box info">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <div><strong>Base URL:</strong>
+                        <code
+                            style="background:var(--code-bg); padding:3px 8px; border-radius:4px; font-family:'JetBrains Mono',monospace;">https://11labs.id.vn/api/external/v1/</code>
+                    </div>
+                </div>
+
+                <h3>Quy trình hoạt động</h3>
+                <div class="flow-steps">
+                    <div class="flow-step">
+                        <div class="step-num">1</div>
+                        <div class="step-title">Gửi text</div>
+                        <div class="step-desc">POST /tts.php</div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="step-num">2</div>
+                        <div class="step-title">Nhận Job ID</div>
+                        <div class="step-desc">Hệ thống xếp hàng</div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="step-num">3</div>
+                        <div class="step-title">Kiểm tra</div>
+                        <div class="step-desc">GET /status.php</div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="step-num">4</div>
+                        <div class="step-title">Tải MP3 + SRT</div>
+                        <div class="step-desc">download_url & srt_url</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Authentication -->
+            <section class="doc-section" id="authentication">
+                <h2><i class="fa-solid fa-key" style="color:var(--warning);"></i> Xác thực</h2>
+                <p>Mỗi request yêu cầu API Key. Có 2 cách truyền:</p>
+                <table class="params-table">
+                    <tr>
+                        <th>Cách</th>
+                        <th>Ví dụ</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Query Parameter</strong> (đơn giản)</td>
+                        <td><code>?api_key=PL_xxx</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Header</strong> (bảo mật hơn)</td>
+                        <td><code>x-api-key: PL_xxx</code></td>
+                    </tr>
+                </table>
+
+                <div class="info-box warning">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <div><strong>Bảo mật:</strong> Không chia sẻ API Key. Nếu bị lộ, liên hệ admin để cấp key mới.</div>
+                </div>
+            </section>
+
+            <!-- Quickstart -->
+            <section class="doc-section" id="quickstart">
+                <h2><i class="fa-solid fa-rocket" style="color:var(--secondary);"></i> Bắt đầu nhanh</h2>
+                <p>Tạo file MP3 từ văn bản chỉ với vài dòng code:</p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">Python</span>
+                        <button class="code-copy" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i>
+                            Copy</button>
+                    </div>
+                    <pre class="code-content"><span class="comment"># pip install requests</span>
+import requests, time
+
+API_KEY = <span class="string">"PL_your_api_key"</span>
+BASE = <span class="string">"https://11labs.id.vn/api/external/v1"</span>
+
+<span class="comment"># Bước 1: Tạo job</span>
+res = requests.post(f<span class="string">"{BASE}/tts.php?api_key={API_KEY}"</span>, json={
+    <span class="string">"text"</span>: <span class="string">"Xin chào, đây là giọng nói AI."</span>,
+    <span class="string">"voice_id"</span>: <span class="string">"21m00Tcm4TlvDq8ikWAM"</span>,
+    <span class="string">"model_id"</span>: <span class="string">"eleven_multilingual_v2"</span>
+})
+job_id = res.json()[<span class="string">"job_id"</span>]
+print(f<span class="string">"Job created: {job_id}"</span>)
+
+<span class="comment"># Bước 2: Chờ xử lý</span>
+while True:
+    status = requests.get(f<span class="string">"{BASE}/status.php?api_key={API_KEY}&job_id={job_id}"</span>).json()
+    if status[<span class="string">"status"</span>] == <span class="string">"completed"</span>:
+        <span class="comment"># Bước 3: Tải file MP3</span>
+        mp3 = requests.get(status[<span class="string">"download_url"</span>])
+        with open(<span class="string">"output.mp3"</span>, <span class="string">"wb"</span>) as f:
+            f.write(mp3.content)
+        print(<span class="string">"✅ Đã tải: output.mp3"</span>)
+        <span class="comment"># Tải file SRT (phụ đề)</span>
+        srt = requests.get(status[<span class="string">"srt_url"</span>])
+        if srt.status_code == <span class="number">200</span>:
+            with open(<span class="string">"output.srt"</span>, <span class="string">"wb"</span>) as f:
+                f.write(srt.content)
+            print(<span class="string">"✅ Đã tải: output.srt"</span>)
+        break
+    elif status[<span class="string">"status"</span>] == <span class="string">"failed"</span>:
+        print(<span class="string">"❌ Thất bại"</span>)
+        break
+    time.sleep(<span class="number">3</span>)</pre>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">cURL</span>
+                        <button class="code-copy" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i>
+                            Copy</button>
+                    </div>
+                    <pre class="code-content"><span class="comment"># Tạo job TTS</span>
+curl -X POST <span class="string">"https://11labs.id.vn/api/external/v1/tts.php?api_key=PL_xxx"</span> \
+  -H <span class="string">"Content-Type: application/json"</span> \
+  -d <span class="string">'{"text":"Xin chào","voice_id":"21m00Tcm4TlvDq8ikWAM"}'</span>
+
+<span class="comment"># Kiểm tra trạng thái</span>
+curl <span class="string">"https://11labs.id.vn/api/external/v1/status.php?api_key=PL_xxx&job_id=ABC12345"</span></pre>
+                </div>
+            </section>
+
+            <!-- Endpoint: User -->
+            <section class="doc-section" id="ep-user">
+                <h2>Thông tin tài khoản</h2>
+                <p>Kiểm tra thông tin và số dư ký tự còn lại.</p>
+
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-url">/user.php</span>
+                    </div>
+                    <div class="endpoint-body">
+                        <h3>Tham số</h3>
+                        <table class="params-table">
+                            <tr>
+                                <th>Tên</th>
+                                <th>Kiểu</th>
+                                <th>Mô tả</th>
+                            </tr>
+                            <tr>
+                                <td><code>api_key</code> <span class="param-required">BẮT BUỘC</span></td>
+                                <td>string</td>
+                                <td>API Key của bạn</td>
+                            </tr>
+                        </table>
+
+                        <h3>Response thành công</h3>
+                        <div class="response-block">
+                            <pre>{
+  "status": "success",
+  "id": 42,
+  "email": "user@example.com",
+  "quota_total": 1000000,
+  "quota_used": 25000,
+  "remaining_quota": 975000,
+  "expires_at": "2026-04-01 00:00:00"
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Endpoint: Voices -->
+            <section class="doc-section" id="ep-voices">
+                <h2>Danh sách giọng đọc</h2>
+                <p>Lấy danh sách giọng đọc có sẵn. Hỗ trợ lọc theo ngôn ngữ và tìm kiếm.</p>
+
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-url">/voices.php</span>
+                    </div>
+                    <div class="endpoint-body">
+                        <h3>Tham số</h3>
+                        <table class="params-table">
+                            <tr>
+                                <th>Tên</th>
+                                <th>Kiểu</th>
+                                <th>Mô tả</th>
+                            </tr>
+                            <tr>
+                                <td><code>api_key</code> <span class="param-required">BẮT BUỘC</span></td>
+                                <td>string</td>
+                                <td>API Key của bạn</td>
+                            </tr>
+                            <tr>
+                                <td><code>q</code> <span class="param-optional">tuỳ chọn</span></td>
+                                <td>string</td>
+                                <td>Tìm kiếm theo tên giọng</td>
+                            </tr>
+                            <tr>
+                                <td><code>language</code> <span class="param-optional">tuỳ chọn</span></td>
+                                <td>string</td>
+                                <td>Lọc theo ngôn ngữ (vd: <code>vi</code>, <code>en</code>)</td>
+                            </tr>
+                        </table>
+
+                        <h3>Response thành công</h3>
+                        <div class="response-block">
+                            <pre>{
+  "status": "success",
+  "count": 100,
+  "voices": [
+    {
+      "voice_id": "21m00Tcm4TlvDq8ikWAM",
+      "name": "Rachel",
+      "preview_url": "https://...",
+      "labels": {"accent": "american", "age": "young"},
+      "category": "premade"
+    }
+  ]
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Endpoint: TTS -->
+            <section class="doc-section" id="ep-tts">
+                <h2>Tạo giọng nói (TTS)</h2>
+                <p>Gửi văn bản để chuyển thành giọng nói. Job sẽ được xếp hàng và xử lý bởi hệ thống.</p>
+
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="method-badge method-post">POST</span>
+                        <span class="endpoint-url">/tts.php</span>
+                    </div>
+                    <div class="endpoint-body">
+                        <h3>Tham số (JSON Body)</h3>
+                        <table class="params-table">
+                            <tr>
+                                <th>Tên</th>
+                                <th>Kiểu</th>
+                                <th>Mô tả</th>
+                            </tr>
+                            <tr>
+                                <td><code>text</code> <span class="param-required">BẮT BUỘC</span></td>
+                                <td>string</td>
+                                <td>Văn bản cần đọc (tối đa 10,000 ký tự)</td>
+                            </tr>
+                            <tr>
+                                <td><code>voice_id</code> <span class="param-optional">tuỳ chọn</span></td>
+                                <td>string</td>
+                                <td>ID giọng đọc. Mặc định: <code>21m00Tcm4TlvDq8ikWAM</code> (Rachel)</td>
+                            </tr>
+                            <tr>
+                                <td><code>model_id</code> <span class="param-optional">tuỳ chọn</span></td>
+                                <td>string</td>
+                                <td>Model AI. Mặc định: <code>eleven_multilingual_v2</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>voice_settings</code> <span class="param-optional">tuỳ chọn</span></td>
+                                <td>object</td>
+                                <td>Tuỳ chỉnh: <code>stability</code>, <code>similarity_boost</code>, <code>speed</code>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <h3>Models có sẵn</h3>
+                        <table class="params-table">
+                            <tr>
+                                <th>Model ID</th>
+                                <th>Mô tả</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                            <tr>
+                                <td><code>eleven_v3</code></td>
+                                <td>Eleven v3 (Mới nhất)</td>
+                                <td>🌟 Chất lượng cao nhất, hỗ trợ đa ngôn ngữ</td>
+                            </tr>
+                            <tr>
+                                <td><code>eleven_multilingual_v2</code></td>
+                                <td>Đa ngôn ngữ v2</td>
+                                <td>🇻🇳 Khuyên dùng cho Tiếng Việt</td>
+                            </tr>
+                            <tr>
+                                <td><code>eleven_turbo_v2_5</code></td>
+                                <td>Turbo v2.5</td>
+                                <td>⚡ Nhanh nhất</td>
+                            </tr>
+                            <tr>
+                                <td><code>eleven_flash_v2_5</code></td>
+                                <td>Flash v2.5</td>
+                                <td>💰 Tiết kiệm nhất</td>
+                            </tr>
+                            <tr>
+                                <td><code>eleven_monolingual_v1</code></td>
+                                <td>Đơn ngôn ngữ v1</td>
+                                <td>🇬🇧 Chỉ Tiếng Anh</td>
+                            </tr>
+                        </table>
+
+                        <h3>Response thành công</h3>
+                        <div class="response-block">
+                            <pre>{
+  "status": "success",
+  "job_id": "A1B2C3D4",
+  "message": "Job created successfully",
+  "characters_used": 150,
+  "remaining_quota": 974850
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Endpoint: Status -->
+            <section class="doc-section" id="ep-status">
+                <h2>Kiểm tra trạng thái Job</h2>
+                <p>Kiểm tra tiến trình xử lý. Khi hoàn thành, response sẽ chứa link tải file MP3 và file SRT (phụ đề).</p>
+
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-url">/status.php</span>
+                    </div>
+                    <div class="endpoint-body">
+                        <h3>Tham số</h3>
+                        <table class="params-table">
+                            <tr>
+                                <th>Tên</th>
+                                <th>Kiểu</th>
+                                <th>Mô tả</th>
+                            </tr>
+                            <tr>
+                                <td><code>api_key</code> <span class="param-required">BẮT BUỘC</span></td>
+                                <td>string</td>
+                                <td>API Key của bạn</td>
+                            </tr>
+                            <tr>
+                                <td><code>job_id</code> <span class="param-required">BẮT BUỘC</span></td>
+                                <td>string</td>
+                                <td>Mã job nhận từ endpoint TTS</td>
+                            </tr>
+                        </table>
+
+                        <h3>Các trạng thái</h3>
+                        <table class="params-table">
+                            <tr>
+                                <th>Status</th>
+                                <th>Ý nghĩa</th>
+                            </tr>
+                            <tr>
+                                <td><code>pending</code></td>
+                                <td>Đang chờ trong hàng đợi</td>
+                            </tr>
+                            <tr>
+                                <td><code>processing</code></td>
+                                <td>Đang xử lý bởi worker</td>
+                            </tr>
+                            <tr>
+                                <td><code>completed</code></td>
+                                <td>✅ Hoàn thành — có <code>download_url</code> và <code>srt_url</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>failed</code></td>
+                                <td>❌ Thất bại</td>
+                            </tr>
+                        </table>
+
+                        <h3>Response khi hoàn thành</h3>
+                        <div class="response-block">
+                            <pre>{
+  "status": "completed",
+  "job_id": "A1B2C3D4",
+  "created_at": "2026-03-04 07:00:00",
+  "download_url": "https://11labs.id.vn/api/results/A1B2C3D4.mp3",
+  "srt_url": "https://11labs.id.vn/api/results/A1B2C3D4.srt"
+}</pre>
+                        </div>
+
+                        <div class="info-box tip">
+                            <i class="fa-solid fa-lightbulb"></i>
+                            <div><strong>Mẹo:</strong> Poll endpoint này mỗi 3-5 giây cho đến khi status là
+                                <code>completed</code> hoặc <code>failed</code>. File MP3 sẽ tồn tại trên server trong 6
+                                giờ.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Batch -->
+            <section class="doc-section" id="batch">
+                <h2><i class="fa-solid fa-layer-group" style="color:var(--accent);"></i> Xử lý hàng loạt</h2>
+                <p>Gửi nhiều đoạn text cùng lúc, hệ thống sẽ xử lý song song trên nhiều máy chủ.</p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">Python — Batch Processing</span>
+                        <button class="code-copy" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i>
+                            Copy</button>
+                    </div>
+                    <pre class="code-content">import requests, time, os
+
+API_KEY = <span class="string">"PL_your_api_key"</span>
+BASE = <span class="string">"https://11labs.id.vn/api/external/v1"</span>
+VOICE = <span class="string">"21m00Tcm4TlvDq8ikWAM"</span>
+
+<span class="comment"># Danh sách text (có thể đọc từ file .txt hoặc .csv)</span>
+texts = [
+    <span class="string">"Đoạn 1: Chào mừng bạn đến với kênh..."</span>,
+    <span class="string">"Đoạn 2: Hôm nay chúng ta sẽ..."</span>,
+    <span class="string">"Đoạn 3: Cảm ơn các bạn đã theo dõi..."</span>,
+]
+
+<span class="comment"># Bước 1: Gửi tất cả jobs</span>
+jobs = []
+for i, text in enumerate(texts):
+    res = requests.post(f<span class="string">"{BASE}/tts.php?api_key={API_KEY}"</span>, json={
+        <span class="string">"text"</span>: text, <span class="string">"voice_id"</span>: VOICE
+    }).json()
+    if res.get(<span class="string">"job_id"</span>):
+        jobs.append(res[<span class="string">"job_id"</span>])
+        print(f<span class="string">"✅ [{i+1}/{len(texts)}] Job: {res['job_id']}"</span>)
+    time.sleep(<span class="number">0.5</span>)
+
+<span class="comment"># Bước 2: Chờ & tải từng file</span>
+os.makedirs(<span class="string">"output"</span>, exist_ok=True)
+for job_id in jobs:
+    while True:
+        s = requests.get(f<span class="string">"{BASE}/status.php?api_key={API_KEY}&job_id={job_id}"</span>).json()
+        if s[<span class="string">"status"</span>] == <span class="string">"completed"</span>:
+            mp3 = requests.get(s[<span class="string">"download_url"</span>]).content
+            with open(f<span class="string">"output/{job_id}.mp3"</span>, <span class="string">"wb"</span>) as f:
+                f.write(mp3)
+            print(f<span class="string">"📥 Tải xong: {job_id}.mp3"</span>)
+            break
+        elif <span class="string">"failed"</span> in s[<span class="string">"status"</span>]:
+            print(f<span class="string">"❌ Lỗi: {job_id}"</span>)
+            break
+        time.sleep(<span class="number">3</span>)</pre>
+                </div>
+            </section>
+
+            <!-- Errors -->
+            <section class="doc-section" id="errors">
+                <h2><i class="fa-solid fa-triangle-exclamation" style="color:var(--error);"></i> Mã lỗi</h2>
+                <p>Tất cả response lỗi đều có dạng:</p>
+                <div class="response-block error">
+                    <pre>{ "error": "Mô tả lỗi" }</pre>
+                </div>
+
+                <table class="params-table">
+                    <tr>
+                        <th>HTTP Code</th>
+                        <th>Ý nghĩa</th>
+                        <th>Cách xử lý</th>
+                    </tr>
+                    <tr>
+                        <td><code>400</code></td>
+                        <td>Dữ liệu không hợp lệ</td>
+                        <td>Kiểm tra JSON body, text không được rỗng</td>
+                    </tr>
+                    <tr>
+                        <td><code>401</code></td>
+                        <td>API Key sai hoặc hết hạn</td>
+                        <td>Kiểm tra lại API Key</td>
+                    </tr>
+                    <tr>
+                        <td><code>403</code></td>
+                        <td>Hết quota ký tự</td>
+                        <td>Liên hệ admin nạp thêm</td>
+                    </tr>
+                    <tr>
+                        <td><code>404</code></td>
+                        <td>Job không tồn tại</td>
+                        <td>Kiểm tra lại Job ID</td>
+                    </tr>
+                    <tr>
+                        <td><code>405</code></td>
+                        <td>Sai HTTP method</td>
+                        <td>TTS dùng POST, còn lại dùng GET</td>
+                    </tr>
+                    <tr>
+                        <td><code>500</code></td>
+                        <td>Lỗi server</td>
+                        <td>Thử lại sau vài giây</td>
+                    </tr>
+                    <tr>
+                        <td><code>503</code></td>
+                        <td>Hệ thống bận</td>
+                        <td>Tất cả worker đang bận, thử lại sau 10-30s</td>
+                    </tr>
+                </table>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        // Copy code
+        function copyCode(btn) {
+            const code = btn.closest('.code-block').querySelector('.code-content').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+                setTimeout(() => btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy', 2000);
+            });
+        }
+
+        // Sidebar active state
+        const sections = document.querySelectorAll('.doc-section');
+        const navLinks = document.querySelectorAll('.docs-sidebar a');
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(s => {
+                if (window.scrollY >= s.offsetTop - 100) current = s.id;
+            });
+            navLinks.forEach(a => {
+                a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+            });
+        });
+    </script>
+</body>
+
+</html>
