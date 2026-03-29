@@ -128,9 +128,7 @@ try {
 
     foreach ($jobs as $job) {
         $text = $job['text'] ?? '';
-        $mId = $job['model_id'] ?? 'eleven_v3';
-        $multiplier = (strpos(strtolower($mId), 'v3') !== false) ? 2 : 1;
-        $totalCharsNeeded += mb_strlen($text, 'UTF-8') * $multiplier;
+        $totalCharsNeeded += mb_strlen($text, 'UTF-8');
     }
 
     // --- ADDITIVE QUOTA CHECK ---
@@ -191,8 +189,7 @@ try {
         $stmtInsert->execute([$jobId, $userId, ceil($jobChars / 4500), $text, $originalFilename, $sortOrder, $vId, $mId, $vSettings ? json_encode($vSettings) : null]);
 
         // Update Quota (From User/Team)
-        $multiplier = (strpos(strtolower($mId), 'v3') !== false) ? 2 : 1;
-        $jobTotalCost = $jobChars * $multiplier;
+        $jobTotalCost = $jobChars;
 
         $toDeduct = $jobTotalCost;
         $personalDeduct = min($toDeduct, $currentPersonalRemaining);
