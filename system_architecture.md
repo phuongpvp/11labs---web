@@ -246,8 +246,8 @@ sequenceDiagram
 | Module | Submit | Progress | DB Table | Job Prefix | Tính phí |
 |--------|--------|----------|----------|------------|----------|
 | **TTS** | `convert.php` | `progress.php` | `conversion_jobs` | 8 chars random | 1 char = 1 credit |
-| **Conversation** | `conversation.php` | `progress.php` | `conversion_jobs` | `CV-` | v3: x2 |
-| **Batch TTS** | `batch_convert.php` | `progress.php` | `conversion_jobs` | 8 chars random | v3: x2, auto-split |
+| **Conversation** | `conversation.php` | `progress.php` | `conversion_jobs` | `CV-` | 1 char = 1 credit |
+| **Batch TTS** | `batch_convert.php` | `progress.php` | `conversion_jobs` | 8 chars random | 1 char = 1 credit, auto-split |
 | **Music** | `music/compose.php` | `music/progress.php` | `music_jobs` | `MU` | 1300 credit/phút |
 | **SFX** | `sfx/compose.php` | `sfx/progress.php` | `sfx_jobs` | `SX` | 50 credit/giây |
 | **Isolator** | `isolator/upload.php` | `isolator/progress.php` | `isolation_jobs` | 8 hex chars | File upload |

@@ -658,8 +658,9 @@ def process_conversation_job(job_id, conv_data_json, valid_accounts, model_id, p
             line_text = line.get('text', '')
             speaker_voice_id = speakers.get(speaker_id, {}).get('voice_id', '')
 
-            if not line_text or not speaker_voice_id:
-                log_to_backend(f"⚠️ Skip line {i+1}: empty text or no voice for {speaker_id}", job_id=job_id)
+            if not line_text or not speaker_voice_id or not re.sub(r'[^\w]', '', line_text):
+                log_to_backend(f"⚠️ Skip line {i+1}: text is empty, punctuation-only, or no voice for {speaker_id}", job_id=job_id)
+                audio_segments.append(AudioSegment.silent(duration=500))
                 i += 1
                 continue
 
@@ -839,6 +840,15 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
         last_error = "Hết key khả dụng"
         total_timeout_count = 0  # Track total timeouts across all keys
         while i < len(chunks):
+            # Bỏ qua các chunk chỉ chứa dấu câu (ví dụ: "....") để tránh lỗi 0-byte audio từ ElevenLabs làm crash xử lý ffmpeg
+            if not re.sub(r'[^\w]', '', chunks[i]):
+                log_to_backend(f"⚠️ Bỏ qua chunk {i+1}: Chỉ chứa dấu câu '{chunks[i]}', không có chữ", job_id=job_id)
+                audio_segments.append(AudioSegment.silent(duration=500))
+                cumulative_duration += 0.5
+                i += 1
+                report_progress(i)
+                continue
+                
             if current_acc_idx >= len(valid_accounts):
                 # === HANDOFF: Release job for another worker ===
                 if len(audio_segments) > 0:
