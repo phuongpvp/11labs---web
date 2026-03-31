@@ -40,6 +40,13 @@ try {
     $stmtCleanup = $db->prepare("DELETE FROM workers WHERE url = ? AND worker_uuid != ?");
     $stmtCleanup->execute([$url, $workerUuid]);
 
+    // 1b. Remove old workers with the same name but different UUID
+    // (Cloudflare Tunnel creates a new URL + UUID on each restart, so cleanup by name)
+    if ($workerName) {
+        $stmtNameCleanup = $db->prepare("DELETE FROM workers WHERE worker_name = ? AND worker_uuid != ?");
+        $stmtNameCleanup->execute([$workerName, $workerUuid]);
+    }
+
     // 2. Insert/Update worker
     // Using a very old date for last_assigned on new workers to make them priority
     $stmt = $db->prepare("
