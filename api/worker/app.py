@@ -1,12 +1,13 @@
-# @title 🚀 BACKEND SERVER V3.8 (Siêu Dự Phòng API Key)
-!pip install flask flask-cors pyngrok pydub pycryptodome requests --quiet
+# @title 🚀 BACKEND SERVER V3.9 (Cloudflare Tunnel - No Ngrok)
+!pip install flask flask-cors pydub pycryptodome requests --quiet
+!wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared
 
 
 import os, time, json, base64, io, hashlib, binascii, logging, re, threading, uuid
 from math import ceil
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from pyngrok import ngrok
+import subprocess
 from Crypto.Cipher import AES
 from pydub import AudioSegment, effects
 import requests
@@ -1539,37 +1540,22 @@ def conversation_endpoint():
 # ===== SHUTDOWN: Kill ngrok sạch trước khi Colab disconnect =====
 @app.route('/api/shutdown_ngrok', methods=['POST'])
 def shutdown_ngrok():
-    """Kill ngrok cleanly so the token is released immediately.
-    Called by backend before scheduling Colab disconnect."""
+    """Kill cloudflared tunnel cleanly.
+    Called by backend before scheduling Colab disconnect.
+    Endpoint name kept for backward compatibility."""
     try:
         data = request.json or {}
         if data.get('secret') != UPDATE_SECRET:
             return jsonify({'error': 'Unauthorized'}), 401
 
-        logger.info("🛑 Shutdown ngrok requested — killing tunnels...")
-        log_to_backend(f"🛑 Nhận lệnh shutdown ngrok (IP block auto-restart)", level='warning')
+        logger.info("🛑 Shutdown tunnel requested — killing cloudflared...")
+        log_to_backend(f"🛑 Nhận lệnh shutdown tunnel (IP block auto-restart)", level='warning')
 
-        # 1. Disconnect all tunnels gracefully
-        try:
-            tunnels = ngrok.get_tunnels()
-            for tunnel in tunnels:
-                ngrok.disconnect(tunnel.public_url)
-                logger.info(f"  Disconnected tunnel: {tunnel.public_url}")
-        except Exception as e:
-            logger.warning(f"  Tunnel disconnect error: {e}")
+        # Kill cloudflared process
+        os.system("killall -9 cloudflared 2>/dev/null")
+        logger.info("  killall cloudflared done")
 
-        # 2. Kill ngrok process
-        try:
-            ngrok.kill()
-            logger.info("  ngrok.kill() done")
-        except:
-            pass
-
-        # 3. Force kill any remaining ngrok processes
-        os.system("killall -9 ngrok 2>/dev/null")
-        logger.info("  killall ngrok done")
-
-        return jsonify({'status': 'success', 'message': 'Ngrok killed cleanly'})
+        return jsonify({'status': 'success', 'message': 'Cloudflared killed cleanly'})
     except Exception as e:
         logger.error(f"Shutdown error: {e}")
         return jsonify({'error': str(e)}), 500
@@ -1589,105 +1575,75 @@ WORKER_NAME = os.environ.get('WORKER_TARGET_NAME', 'Colab-Auto')  # Set in Colab
 # Track how many times each key is used on this worker
 key_usage_counter = {}  # {key_id: count}
 
-# ===== Tự động lấy Ngrok Token từ Server (Không cần nhập tay) =====
-def fetch_ngrok_token(exclude_tokens=None):
-    if exclude_tokens is None:
-        exclude_tokens = []
+# ===== Cloudflare Tunnel (Không cần token, không cần tài khoản) =====
+def start_cloudflared_tunnel(port=5000, max_retries=5):
+    """Start cloudflared quick tunnel and return the public URL.
+    No account or token needed — completely free."""
+    for attempt in range(1, max_retries + 1):
+        try:
+            # Kill any existing cloudflared process
+            os.system("killall -9 cloudflared 2>/dev/null")
+            time.sleep(1)
+
+            logger.info(f"⏳ Đang tạo Cloudflare Tunnel... (lần {attempt}/{max_retries})")
+
+            # Start cloudflared tunnel in background
+            tunnel_process = subprocess.Popen(
+                ["cloudflared", "tunnel", "--url", f"http://localhost:{port}"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+
+            # Read stderr to find the tunnel URL
+            tunnel_url = None
+            start_time = time.time()
+
+            while time.time() - start_time < 30:  # Wait max 30s
+                line = tunnel_process.stderr.readline().decode("utf-8", errors="ignore")
+                if "trycloudflare.com" in line:
+                    match = re.search(r'(https://[^\s]+\.trycloudflare\.com)', line)
+                    if match:
+                        tunnel_url = match.group(1)
+                        break
+
+            if tunnel_url:
+                logger.info(f"✅ Cloudflare Tunnel thành công: {tunnel_url}")
+                return tunnel_url
+            else:
+                logger.warning(f"⚠️ Không lấy được URL tunnel (lần {attempt})")
+                tunnel_process.terminate()
+                time.sleep(3)
+
+        except Exception as e:
+            logger.error(f"❌ Lỗi tạo tunnel (lần {attempt}): {e}")
+            time.sleep(3)
+
+    return None
+
+# Lấy worker name từ server (nếu có target_name)
+def fetch_worker_name():
     global WORKER_NAME
-    target_name = os.environ.get('WORKER_TARGET_NAME', '')  # Colab sets this
+    target_name = os.environ.get('WORKER_TARGET_NAME', '')
+    if target_name:
+        WORKER_NAME = target_name
     try:
-        logger.info(f"⏳ Đang xin Ngrok token từ server... (target: {target_name or 'any'}, Bỏ qua: {len(exclude_tokens)} token lỗi)")
-        payload = {'worker_uuid': WORKER_UUID, 'secret': UPDATE_SECRET, 'exclude_tokens': exclude_tokens}
-        if target_name:
-            payload['target_name'] = target_name
+        # Vẫn gọi get_ngrok_token.php để lấy worker_name (nhưng không cần token)
         res = requests.post(
             f"{PHP_BACKEND_URL}/api/get_ngrok_token.php",
-            json=payload,
-            timeout=15, verify=False
+            json={'worker_uuid': WORKER_UUID, 'secret': UPDATE_SECRET, 'target_name': target_name},
+            timeout=10, verify=False
         )
         data = res.json()
-        if data.get('success') and data.get('token'):
-            WORKER_NAME = data.get('worker_name', f'Worker-{WORKER_UUID[:6]}')
-            token = data['token']
-            masked_token = f"{token[:6]}...{token[-6:]}"
-            logger.info(f"✅ Nhận được Ngrok token | Tên: {WORKER_NAME}")
-            logger.info(f"🔑 Token: {masked_token} | Nguồn: {data.get('source', 'unknown')}")
-            return token
-        else:
-            # Server says target token is busy, should retry later
-            if data.get('retry'):
-                logger.warning(f"⏳ Token cho {target_name} đang bận, sẽ thử lại sau...")
-                return 'RETRY'
-            logger.error(f"❌ Server không cấp token: {data.get('error', 'Unknown error')}")
-            return None
-    except Exception as e:
-        logger.error(f"❌ Lỗi khi xin Ngrok token: {e}")
-        return None
-
-MAX_TOTAL_RETRIES = 8   # Tổng số lần thử tối đa (bao gồm cả retry + session stuck)
-exclude_tokens = []
-public_url = None
-
-attempt = 0
-while attempt < MAX_TOTAL_RETRIES and not public_url:
-    attempt += 1
-
-    # === BƯỚC A: Xin token từ server ===
-    NGROK_AUTH_TOKEN = fetch_ngrok_token(exclude_tokens)
-
-    if NGROK_AUTH_TOKEN == 'RETRY':
-        # Token đúng tên đang bận (worker khác chưa nhả) → chờ rồi thử lại
-        print(f"⏳ Token đang bận, chờ 30s rồi thử lại... (lần {attempt}/{MAX_TOTAL_RETRIES})")
-        time.sleep(30)
-        continue
-
-    if not NGROK_AUTH_TOKEN:
-        print("🛑 Không lấy được Ngrok token từ server. Hãy kiểm tra pool token trong Admin.")
-        print("   Truy cập Admin > tab 'Ngrok Keys' để thêm token hoặc nhấn RESET.")
-        import sys; sys.exit(1)
-
-    # === BƯỚC B: Kết nối Ngrok ===
-    ngrok.set_auth_token(NGROK_AUTH_TOKEN)
-
-    # Dọn session ngrok cũ nếu có
-    try:
-        os.system("killall -9 ngrok")
-        time.sleep(1)
-        tunnels = ngrok.get_tunnels()
-        for tunnel in tunnels:
-            ngrok.disconnect(tunnel.public_url)
-        ngrok.kill()
+        if data.get('worker_name'):
+            WORKER_NAME = data['worker_name']
     except:
         pass
 
-    try:
-        public_url = ngrok.connect(5000).public_url
-        print(f"✅ Đã khởi động Ngrok thành công: {public_url}")
-        break
-    except Exception as e:
-        error_msg = str(e)
-        if "103" in error_msg or "108" in error_msg or "too many" in error_msg.lower():
-            # Session kẹt trên server Ngrok → KHÔNG exclude token, chờ rồi thử lại cùng token
-            wait_secs = 15
-            print(f"⚠️ Token {NGROK_AUTH_TOKEN[:6]}... kẹt session (Lỗi 103). Chờ {wait_secs}s rồi thử lại... (lần {attempt}/{MAX_TOTAL_RETRIES})")
-            try:
-                os.system("killall -9 ngrok")
-                ngrok.kill()
-            except:
-                pass
-            time.sleep(wait_secs)
-            # KHÔNG thêm vào exclude_tokens → lần sau vẫn lấy đúng token này
-        else:
-            print(f"❌ LỖI KHỞI ĐỘNG NGROK: {e}")
-            print("---")
-            print("💡 CÁCH XỬ LÝ:")
-            print("1. Có thể session cũ chưa thoát hẳn trên máy chủ Ngrok.")
-            print("   👉 Anh vui lòng đợi 1 phút rồi bấm chạy lại (Run All).")
-            print("2. Hoặc vào Admin > tab Ngrok Keys > Nhấn 'Reset Tất Cả' rồi chạy lại nhé!")
-            import sys; sys.exit(1)
+fetch_worker_name()
+public_url = start_cloudflared_tunnel(5000)
 
 if not public_url:
-    print("❌ Đã thử hết các lần nhưng không kết nối được Ngrok. Vui lòng chờ 1-2 phút rồi chạy lại.")
+    print("❌ Không tạo được Cloudflare Tunnel sau nhiều lần thử. Vui lòng chạy lại.")
     import sys; sys.exit(1)
 
 print(f"🚀 SERVER URL: {public_url}")
