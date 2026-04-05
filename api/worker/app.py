@@ -171,6 +171,25 @@ def call_api_stt(audio_path, api_key):
         return response.json()
     raise Exception(f"STT API Error {response.status_code}: {response.text[:300]}")
 
+def call_api_voice_changer(audio_path, voice_id, api_key):
+    url = f"https://api.elevenlabs.io/v1/speech-to-speech/{voice_id}"
+    headers = {"Accept": "audio/mpeg"}
+    if api_key.startswith("ey") or len(api_key) > 100:
+        headers["Authorization"] = f"Bearer {api_key}"
+        headers["Origin"] = "https://elevenlabs.io"
+        headers["Referer"] = "https://elevenlabs.io/"
+    else:
+        headers["xi-api-key"] = api_key
+
+    with open(audio_path, 'rb') as f:
+        files = {"audio": (os.path.basename(audio_path), f, "audio/mpeg")}
+        data = {"model_id": "eleven_multilingual_sts_v2"}
+        response = requests.post(url, headers=headers, files=files, data=data, timeout=300, verify=False)
+
+    if response.status_code == 200:
+        return response.content
+    raise Exception(f"Voice Changer API Error {response.status_code}: {response.text[:300]}")
+
 def call_api_music(prompt, duration_seconds, api_key):
     # Map to the LOWEST ElevenLabs tier that covers the request (save credits!)
     # ElevenLabs fixed tiers: 30s, 60s, 120s, 240s
@@ -2812,6 +2831,125 @@ def stt_worker():
 
         time.sleep(15)
 
+def voice_changer_worker():
+    """Background thread: polls voice_changer_jobs, process audio using ElevenLabs Speech-to-Speech API."""
+    os.makedirs('temp_vc', exist_ok=True)
+    print("🎙️ Voice Changer Worker: Started")
+    while True:
+        job_id = None
+        try:
+            # 1. Get pending jobs
+            res = requests.post(f"{PHP_BACKEND_URL}/api/voice_changer/progress.php",
+                                json={'action': 'get_pending', 'secret': UPDATE_SECRET},
+                                timeout=10, verify=False)
+            jobs = res.json().get('jobs', [])
+            if not jobs:
+                time.sleep(15)
+                continue
+
+            for job in jobs:
+                job_id = job['id']
+                source_file = job['source_file']
+                voice_id = job.get('voice_id')
+                logger.info(f"🎙️ VC Job {job_id}: {source_file} (Voice: {voice_id})")
+
+                # 2. Acquire job
+                acq = requests.post(f"{PHP_BACKEND_URL}/api/voice_changer/progress.php",
+                                    json={'action': 'start', 'job_id': job_id, 'worker_uuid': WORKER_UUID, 'secret': UPDATE_SECRET},
+                                    timeout=10, verify=False)
+                if not acq.json().get('claimed'):
+                    continue
+
+                log_to_backend(f"Bắt đầu Job Thay đổi giọng nói {job_id}", job_id=job_id)
+
+                # 3. Download audio file
+                file_url = f"{PHP_BACKEND_URL}/api/results/voice_changer/uploads/{source_file}"
+                local_path = f"temp_vc/{source_file}"
+                with requests.get(file_url, stream=True, verify=False) as r:
+                    r.raise_for_status()
+                    with open(local_path, 'wb') as f:
+                        for chunk in r.iter_content(chunk_size=8192): f.write(chunk)
+                logger.info(f"📥 Downloaded {source_file} ({os.path.getsize(local_path)} bytes)")
+
+                # 4. Get duration
+                seg = AudioSegment.from_file(local_path)
+                duration_sec = len(seg) / 1000.0
+
+                # 5. Charge points
+                charge = requests.post(f"{PHP_BACKEND_URL}/api/voice_changer/progress.php",
+                                       json={'action': 'charge', 'job_id': job_id, 'duration': duration_sec, 'secret': UPDATE_SECRET},
+                                       timeout=10, verify=False)
+                if charge.status_code != 200 or charge.json().get('status') != 'success':
+                    err_msg = charge.json().get('error', 'Lỗi không rõ')
+                    raise Exception(f"Không đủ tín dụng hoặc lỗi trừ điểm: {err_msg}")
+
+                # 6. Get API Keys
+                keys_res = requests.post(f"{PHP_BACKEND_URL}/api/voice_changer/progress.php",
+                                         json={'action': 'get_keys', 'secret': UPDATE_SECRET},
+                                         timeout=10, verify=False)
+                keys = keys_res.json().get('keys', [])
+                if not keys:
+                    raise Exception("No active API keys available")
+
+                success = False
+                last_error = "Hết key khả dụng"
+
+                for selected_key in keys:
+                    try:
+                        raw_key = decrypt_key(selected_key['key'])
+                        if ':' in raw_key and '@' in raw_key:
+                            pts = raw_key.split(':', 1)
+                            tk = login_with_firebase(pts[0].strip(), pts[1].strip())
+                            if not tk:
+                                logger.info(f"⏭️ VC: Firebase login failed for key {selected_key['id']}, skipping")
+                                continue
+                            raw_key = tk
+                        elif raw_key.startswith('sk_'):
+                            continue
+
+                        logger.info(f"🔑 Trying VC with key {selected_key['id']}")
+                        result_audio = call_api_voice_changer(local_path, voice_id, raw_key)
+                        
+                        # 7. Upload Result
+                        files = {'file': ('result.mp3', result_audio, 'audio/mpeg')}
+                        data = {'secret': UPDATE_SECRET, 'job_id': job_id}
+                        ur_res = requests.post(f"{PHP_BACKEND_URL}/api/voice_changer/upload_result.php",
+                                             data=data, files=files, timeout=60, verify=False)
+                        
+                        if ur_res.status_code == 200 and ur_res.json().get('status') == 'success':
+                            final_file = ur_res.json().get('result_file')
+                            requests.post(f"{PHP_BACKEND_URL}/api/voice_changer/progress.php",
+                                          json={'action': 'complete', 'job_id': job_id, 'result_file': final_file, 'api_key_ids': selected_key['id'], 'secret': UPDATE_SECRET},
+                                          timeout=10, verify=False)
+                            log_to_backend(f"Hoàn thành Job Thay đổi giọng nói {job_id}", job_id=job_id)
+                            logger.info(f"✅ VC Job {job_id} Completed")
+                            success = True
+                            break
+                        else:
+                            raise Exception(f"Upload failed: {ur_res.text}")
+
+                    except Exception as e:
+                        err_str = str(e)
+                        logger.error(f"❌ VC Key {selected_key['id']} failed: {err_str}")
+                        last_error = err_str
+                        continue
+
+                if not success:
+                    raise Exception(last_error)
+
+                # Cleanup
+                if os.path.exists(local_path): os.remove(local_path)
+
+        except Exception as e:
+            logger.error(f"💥 VC Worker Error: {e}")
+            if job_id:
+                try: requests.post(f"{PHP_BACKEND_URL}/api/voice_changer/progress.php",
+                                    json={'action': 'fail', 'job_id': job_id, 'error': str(e), 'secret': UPDATE_SECRET},
+                                    timeout=10, verify=False)
+                except: pass
+
+        time.sleep(15)
+
 def register_now():
     try:
         # Lấy IP thực của worker
@@ -2853,6 +2991,7 @@ def delayed_registration():
     threading.Thread(target=music_worker, daemon=True).start()
     threading.Thread(target=sfx_worker, daemon=True).start()
     threading.Thread(target=stt_worker, daemon=True).start()
+    threading.Thread(target=voice_changer_worker, daemon=True).start()
     heartbeat()
 
 threading.Thread(target=delayed_registration, daemon=True).start()

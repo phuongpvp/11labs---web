@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 
 <head>
@@ -770,6 +770,250 @@
                 transform: rotate(0deg);
             }
         }
+        /* Voice Explorer Modal */
+        .explorer-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .explorer-content {
+            background: #121214;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 1000px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .explorer-header {
+            padding: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .explorer-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .search-filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .search-bar {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-bar i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 12px 12px 12px 45px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white !important;
+            font-family: inherit;
+        }
+
+        .filter-chips {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .filter-chip {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: 0.2s;
+        }
+
+        .filter-chip.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white !important;
+        }
+
+        .voice-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .voice-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            transition: 0.2s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .voice-card:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .voice-card.selected {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        .voice-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .voice-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            color: white !important;
+        }
+
+        .voice-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .voice-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .voice-tag {
+            font-size: 0.7rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--text-muted);
+            text-transform: capitalize;
+        }
+
+        .voice-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            height: 2.8em;
+        }
+
+        .voice-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+        }
+
+        .btn-preview {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white !important;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-preview:hover {
+            background: var(--primary);
+        }
+
+        .btn-select {
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .voice-card:hover .btn-select {
+            background: var(--primary);
+            color: white !important;
+        }
+
+    
+        .setting-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .setting-box:hover {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .setting-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
     </style>
 </head>
 
@@ -921,10 +1165,20 @@
                             style="margin: 20px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid var(--border);">
                             <h3 style="margin-bottom: 15px; font-size: 1.1rem; color: white;">Chọn giọng đọc mục tiêu
                             </h3>
-                            <select id="voiceSelect" class="form-control"
-                                style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border); border-radius: 8px;">
-                                <option value="">Đang tải danh sách giọng đọc...</option>
-                            </select>
+                            <div class="setting-box" onclick="openVoiceExplorer()">
+                                <div class="setting-info">
+                                    <i class="fa-solid fa-headset" style="color: var(--primary); font-size: 1.2rem;"></i>
+                                    <div>
+                                        <div style="font-weight: 600;">Giọng đọc (Voice)</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Đổi sang giọng này</div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span id="voiceNameDisplay" style="font-size: 0.9rem; font-weight: 600; color: white;">Chọn một giọng đọc</span>
+                                    <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.8rem;"></i>
+                                </div>
+                            </div>
+                            <select id="voiceSelect" style="display:none;"></select>
                         </div>
 
                         <div class="toolbar"
@@ -1002,6 +1256,57 @@
         let currentFile = null;
         let userData = null;
 
+        const API_BASE = 'api';
+        let allVoices = [];
+        let activeFilters = {};
+        
+        let activeFilter = 'all';
+        let currentPreviewAudio = null;
+        let favoriteVoices = [];
+
+        function getFavoritesKey() {
+            return userData ? `favoriteVoices_${userData.email}` : 'favoriteVoices_anon';
+        }
+
+        function loadUserFavorites() {
+            const key = getFavoritesKey();
+            favoriteVoices = JSON.parse(localStorage.getItem(key) || '[]');
+            if (favoriteVoices.length > 0 && typeof favoriteVoices[0] === 'string') {
+                favoriteVoices = [];
+                localStorage.setItem(key, '[]');
+            }
+        }
+        let currentRenderedVoices = [];
+
+        function toggleFavorite(voiceId, event) {
+            event.stopPropagation();
+            const index = favoriteVoices.findIndex(v => v.voice_id === voiceId);
+            const btn = event.currentTarget;
+            const icon = btn.querySelector('i');
+
+            if (index === -1) {
+                // Add to favorites
+                const voiceObj = currentRenderedVoices.find(v => v.voice_id === voiceId);
+                if (voiceObj) {
+                    favoriteVoices.push(voiceObj);
+                    icon.className = 'fa-solid fa-heart';
+                    icon.style.color = '#ef4444'; // Red
+                }
+            } else {
+                // Remove from favorites
+                favoriteVoices.splice(index, 1);
+                icon.className = 'fa-regular fa-heart';
+                icon.style.color = 'var(--text-muted)';
+            }
+            localStorage.setItem(getFavoritesKey(), JSON.stringify(favoriteVoices));
+
+            // If currently viewing favorites, refresh list
+            if (activeFilter === 'favorites') {
+                renderVoices([], '');
+            }
+        }
+
+
         // Start
         init();
 
@@ -1040,6 +1345,8 @@
                 const data = await res.json();
                 if (data.status === 'success') {
                     userData = data.user;
+                    if (typeof loadUserFavorites === 'function') loadUserFavorites();
+                    if (typeof loadUserFavorites === 'function') loadUserFavorites();
                     const balance = data.user.quota_total - data.user.quota_used;
                     const percent = Math.min(100, (balance / data.user.quota_total) * 100);
 
@@ -1127,9 +1434,387 @@
         }
 
 
+            function openVoiceExplorer() {
+                document.getElementById('voiceExplorerModal').style.display = 'flex';
+                loadUserFavorites();
+                if (allVoices.length === 0) fetchVoices();
+            }
+
+            function closeVoiceExplorer() {
+                document.getElementById('voiceExplorerModal').style.display = 'none';
+                if (currentPreviewAudio) {
+                    currentPreviewAudio.pause();
+                    currentPreviewAudio = null;
+                }
+            }
+
+            let searchTimeout = null;
+
+            function handleSearch() {
+                if (searchTimeout) clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    handleAdvanceFilter();
+                }, 500);
+            }
+
+            function handleAdvanceFilter() {
+                const query = document.getElementById('voiceSearch').value;
+                const lang = document.getElementById('filterLanguage').value;
+                const acc = document.getElementById('filterAccent').value;
+                const cat = document.getElementById('filterCategory').value;
+                const gen = document.getElementById('filterGender').value;
+                const age = document.getElementById('filterAge').value;
+                const tRate = document.getElementById('toggleRate').checked;
+                const tMod = document.getElementById('toggleModeration').checked;
+
+                let activeCount = 0;
+                if (lang) activeCount++;
+                if (acc) activeCount++;
+                if (cat) activeCount++;
+                if (gen) activeCount++;
+                if (age) activeCount++;
+                if (tRate) activeCount++;
+                if (tMod) activeCount++;
+
+                document.getElementById('activeFilterCount').innerText = activeCount;
+
+                // Pass the whole filter object to fetchVoices
+                fetchVoices({
+                    query: query,
+                    language: lang,
+                    accent: acc,
+                    category: cat,
+                    gender: gen,
+                    age: age,
+                    tRate: tRate,
+                    tMod: tMod,
+                    tab: activeFilter // 'all' or 'favorites'
+                });
+            }
+
+            function clearVoiceFilters() {
+                document.getElementById('filterLanguage').value = '';
+                document.getElementById('filterAccent').value = '';
+                document.getElementById('filterCategory').value = '';
+                document.getElementById('filterGender').value = '';
+                document.getElementById('filterAge').value = '';
+                document.getElementById('toggleRate').checked = false;
+                document.getElementById('toggleModeration').checked = false;
+                document.getElementById('voiceSearch').value = '';
+                document.getElementById('activeFilterCount').innerText = '0';
+
+                if (typeof resetCustomSelectsUI === 'function') {
+                    resetCustomSelectsUI();
+                }
+
+                handleAdvanceFilter();
+            }
+
+            // Also update the tab changer to use the new logic
+            function setFilter(filterType, btn) {
+                document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                activeFilter = filterType;
+
+                if (filterType === 'favorites') {
+                    clearVoiceFilters();
+                } else {
+                    handleAdvanceFilter();
+                }
+            }
+
+            async function fetchVoices(filters = {}) {
+                const grid = document.getElementById('voiceGrid');
+                grid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 50px; color: var(--text-muted);">
+                    <i class="fa-solid fa-spinner fa-spin fa-2x" style="margin-bottom: 15px;"></i>
+                    <p>Đang tải danh sách giọng đọc...</p>
+                </div>
+            `;
+
+                const query = filters.query || '';
+                const tab = filters.tab || 'all';
+
+                if (tab === 'favorites') {
+                    // render favorites immediately if that's the tab
+                    renderVoices([], filters);
+                    return;
+                }
+
+                let url = `${API_BASE}/voices.php?q=${encodeURIComponent(query)}`;
+                if (filters.gender) url += `&gender=${filters.gender}`;
+                if (filters.accent) url += `&accent=${filters.accent}`;
+                if (filters.language) url += `&language=${filters.language}`;
+                if (filters.category) url += `&category=${filters.category}`;
+                if (filters.age) url += `&age=${filters.age}`;
+
+                try {
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        if (query === '' && Object.keys(filters).length <= 2) allVoices = data.voices;
+                        renderVoices(data.voices, filters);
+                    } else {
+                        grid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--error);">Lỗi: ${data.message || 'Không thể tải danh sách'}</p>`;
+                    }
+                } catch (error) {
+                    console.error("Error fetching voices:", error);
+                    grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: var(--error);">Lỗi kết nối tới ElevenLabs.</p>';
+                }
+            }
+
+            // Updated signature to accept the full filters object
+            function renderVoices(voices, filters = {}) {
+                const grid = document.getElementById('voiceGrid');
+                const cleanQuery = (filters.query || '').trim();
+                const lowerQuery = cleanQuery.toLowerCase();
+                const isPotentialId = cleanQuery.length >= 10 && !cleanQuery.includes(' ');
+                const tab = filters.tab || 'all';
+
+                // Ensure favoriteVoices is an array
+                const safeFavorites = Array.isArray(favoriteVoices) ? favoriteVoices : [];
+
+                // Filter for Favorites tab (this happens locally in browser)
+                let displayVoices = voices;
+                if (tab === 'favorites') {
+                    // Start with all favorites
+                    displayVoices = safeFavorites;
+
+                    if (cleanQuery) {
+                        displayVoices = displayVoices.filter(v =>
+                            v.name.toLowerCase().includes(lowerQuery) ||
+                            (v.voice_id && v.voice_id.includes(lowerQuery))
+                        );
+                    }
+                    if (filters.gender) {
+                        displayVoices = displayVoices.filter(v => v.labels && v.labels.gender === filters.gender);
+                    }
+                    if (filters.accent) {
+                        displayVoices = displayVoices.filter(v => v.labels && v.labels.accent === filters.accent);
+                    }
+                    if (filters.category) {
+                        displayVoices = displayVoices.filter(v => v.category === filters.category);
+                    }
+                }
+
+                // Store for detail lookup
+                currentRenderedVoices = displayVoices;
+                if (tab !== 'favorites') currentRenderedVoices = voices;
+
+                if (displayVoices.length === 0) {
+                    grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 40px;">' +
+                        (tab === 'favorites' ? 'Bạn chưa có giọng đọc yêu thích nào phù hợp với bộ lọc.' : 'Không tìm thấy giọng này...') +
+                        '</p>';
+                    if (isPotentialId && tab !== 'favorites') showCustomIdHelper(cleanQuery);
+                    return;
+                }
+
+                let html = displayVoices.map(v => {
+                    const accent = v.labels?.accent || '';
+                    const gender = v.labels?.gender || '';
+                    const age = v.labels?.age || '';
+                    const useCase = v.labels?.use_case || '';
+                    const desc = v.description || 'Chưa có mô tả.';
+                    const avatarChar = v.name.charAt(0);
+                    const isFav = safeFavorites.some(fv => fv.voice_id === v.voice_id);
+
+                    // Format Usage Count
+                    let usageText = '';
+                    if (v.usage_count > 0) {
+                        let count = v.usage_count;
+                        if (count >= 1000000) usageText = (count / 1000000).toFixed(1) + 'm users';
+                        else if (count >= 1000) usageText = (count / 1000).toFixed(1) + 'k users';
+                        else usageText = count + ' users';
+                    }
+
+                    return `
+                    <div class="voice-card" onclick="selectVoiceFromExplorer('${v.voice_id}', '${v.name}')">
+                        <div class="voice-info">
+                            <div class="voice-avatar">${avatarChar}</div>
+                            <div>
+                                <div class="voice-name">${v.name}</div>
+                                <div class="voice-tags" style="margin-bottom: 8px;">
+                                    <span class="voice-tag" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-weight: bold;">HIGH_QUALITY</span>
+                                    ${useCase ? `<span class="voice-tag" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-weight: bold; text-transform: uppercase;">${useCase.replace(/_/g, ' ')}</span>` : ''}
+                                    <span class="voice-tag" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-weight: bold; text-transform: uppercase;">${v.category || 'PREMADE'}</span>
+                                </div>
+                                <div class="voice-subtags" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; font-size: 0.75rem;">
+                                    ${accent ? `<span style="display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 12px; color: var(--text-muted);"><span style="color: #ef4444; font-size: 0.5rem;">●</span> ${accent}</span>` : ''}
+                                    ${gender ? `<span style="background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 12px; color: var(--text-muted);">${gender}</span>` : ''}
+                                    ${age ? `<span style="background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 12px; color: var(--text-muted);">${age}</span>` : ''}
+                                </div>
+                                ${usageText ? `<div style="color: var(--text-muted); font-size: 0.75rem; display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-user-group"></i> ${usageText}</div>` : ''}
+                            </div>
+                        </div>
+                        <div class="voice-desc">${desc}</div>
+                        <div class="voice-actions">
+                            <button class="btn-preview" onclick="toggleFavorite('${v.voice_id}', event)" title="Yêu thích">
+                                <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart" style="color: ${isFav ? '#ef4444' : 'var(--text-muted)'}"></i>
+                            </button>
+                            <button class="btn-preview" onclick="copyVoiceId('${v.voice_id}', event, this)" title="Sao chép ID">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                            <button class="btn-preview" onclick="event.stopPropagation(); playVoicePreview('${v.preview_url}', this)" title="Nghe thử">
+                                <i class="fa-solid fa-play"></i>
+                            </button>
+                            <button class="btn-select">Dùng</button>
+                        </div>
+                    </div>
+                `;
+                }).join('');
+
+                // If we have results but none match the ID exactly, and query looks like an ID, add the helper at the end
+                grid.innerHTML = html;
+                if (activeFilter !== 'favorites' && isPotentialId && !displayVoices.some(v => v.voice_id === cleanQuery)) {
+                    showCustomIdHelper(cleanQuery);
+                }
+            }
+
+            function showCustomIdHelper(voiceId) {
+                const grid = document.getElementById('voiceGrid');
+
+                grid.innerHTML += `
+                <div style="grid-column: 1/-1; text-align:center; padding: 30px; background: rgba(var(--primary-rgb), 0.1); border-radius: 20px; border: 1px dashed var(--primary); margin-top: 15px; animation: fadeIn 0.5s ease;">
+                    <div style="font-size: 2rem; color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-id-badge"></i></div>
+                    <h3 style="margin-bottom: 5px;">Tìm kiếm ID giọng này?</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">Nếu đây là Voice ID hợp lệ từ ElevenLabs, bạn có thể chọn dùng ngay.</p>
+                    <button class="btn-primary" onclick="selectVoiceFromExplorer('${voiceId}', 'Custom Voice')" style="padding: 12px 30px;">
+                        <i class="fa-solid fa-check-double"></i> Sử dụng Voice ID: ${voiceId}
+                    </button>
+                </div>
+            `;
+            }
+
+            function playVoicePreview(url, btn) {
+                if (currentPreviewAudio) {
+                    currentPreviewAudio.pause();
+                    // Reset icons
+                    document.querySelectorAll('.btn-preview i').forEach(i => {
+                        i.classList.remove('fa-pause');
+                        i.classList.add('fa-play');
+                    });
+                    if (currentPreviewAudio.src === url) {
+                        currentPreviewAudio = null;
+                        return;
+                    }
+                }
+
+                currentPreviewAudio = new Audio(url);
+                const icon = btn.querySelector('i');
+                icon.classList.remove('fa-play');
+                icon.classList.add('fa-pause');
+
+                currentPreviewAudio.play();
+                currentPreviewAudio.onended = () => {
+                    icon.classList.remove('fa-pause');
+                    icon.classList.add('fa-play');
+                    currentPreviewAudio = null;
+                };
+            }
+
+            function copyVoiceId(voiceId, event, btn) {
+                event.stopPropagation();
+                navigator.clipboard.writeText(voiceId).then(() => {
+                    const icon = btn.querySelector('i');
+                    icon.className = 'fa-solid fa-check';
+                    icon.style.color = '#10b981';
+                    setTimeout(() => {
+                        icon.className = 'fa-regular fa-copy';
+                        icon.style.color = '';
+                    }, 2000);
+                }).catch(err => console.error('Error copying voice ID:', err));
+            }
+
+            function selectVoiceFromExplorer(voiceId, name) {
+                const select = document.getElementById('voiceSelect');
+                const email = userData ? userData.email : 'anon';
+
+                // Save to Persistent List (Library voices found by user)
+                let savedVoices = JSON.parse(localStorage.getItem(`savedVoices_${email}`) || '[]');
+                const isHardcoded = ["21m00Tcm4TlvDq8ikWAM", "pNInz6obpgDQGcFmaJgB", "EXAV9J63hkihyYS98pAt", "custom"].includes(voiceId);
+
+                if (!isHardcoded && !savedVoices.some(v => v.voice_id === voiceId)) {
+                    savedVoices.push({ voice_id: voiceId, name: name });
+                    localStorage.setItem(`savedVoices_${email}`, JSON.stringify(savedVoices));
+                }
+
+                // Save last selection
+                localStorage.setItem(`lastSelectedVoice_${email}`, voiceId);
+
+                // Add option if it doesn't exist
+                let exists = false;
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].value === voiceId) {
+                        exists = true;
+                        select.selectedIndex = i;
+                        break;
+                    }
+                }
+
+                if (!exists) {
+                    const opt = document.createElement('option');
+                    opt.value = voiceId;
+                    opt.text = name;
+                    // Insert before 'Custom' (last option)
+                    if (select.options.length > 0) {
+                        select.add(opt, select.options.length - 1);
+                    } else {
+                        select.add(opt);
+                    }
+                    select.value = voiceId;
+                } else {
+                    select.value = voiceId;
+                }
+
+                // Update UI Display explicitly
+                document.getElementById('voiceNameDisplay').innerText = name;
+
+                // Trigger change event to hide custom input if needed
+                select.dispatchEvent(new Event('change'));
+                closeVoiceExplorer();
+            }
+
+            function loadSavedVoices() {
+                const select = document.getElementById('voiceSelect');
+                const email = userData ? userData.email : 'anon';
+                const savedVoices = JSON.parse(localStorage.getItem(`savedVoices_${email}`) || '[]');
+                const lastId = localStorage.getItem(`lastSelectedVoice_${email}`);
+
+                savedVoices.forEach(v => {
+                    let exists = false;
+                    for (let i = 0; i < select.options.length; i++) {
+                        if (select.options[i].value === v.voice_id) {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if (!exists) {
+                        const opt = document.createElement('option');
+                        opt.value = v.voice_id;
+                        opt.text = v.name;
+                        // Insert before 'Custom' (last option)
+                        if (select.options.length > 0) {
+                            select.add(opt, select.options.length - 1);
+                        } else {
+                            select.add(opt);
+                        }
+                    }
+                });
+
+                // Restore last selection
+                if (lastId) {
+                    select.value = lastId;
+                    const activeOpt = select.options[select.selectedIndex];
+                    if (activeOpt) {
+                        document.getElementById('voiceNameDisplay').innerText = activeOpt.text;
+                    }
+                }
+            }
+
+
         async function loadJobs() {
             try {
-                const res = await fetch(`api/isolator/list.php`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const res = await fetch(`api/voice_changer/list.php`, { headers: { 'Authorization': `Bearer ${token}` } });
                 const data = await res.json();
                 if (data.status === 'success') {
                     document.getElementById('historyTabCount').innerText = data.jobs.length;
@@ -1151,7 +1836,7 @@
                 let playerHtml = '';
 
                 if (j.status === 'completed' && j.result_file) {
-                    const audioUrl = `api/results/isolator/${j.result_file}`;
+                    const audioUrl = `api/results/voice_changer/${j.result_file}`;
                     const pointsUsed = j.points_used || j.credits_used || 0;
 
                     playerHtml = `
@@ -1163,7 +1848,6 @@
                         <div class="player-time" id="time-${j.id}">0:00 / 0:00</div>
                         <div class="player-actions-mini">
                             <a href="${audioUrl}" download class="btn-mini-action" title="Tải MP3" id="mini-dl-mp3-${j.id}"><i class="fa-solid fa-download"></i></a>
-                            ${j.srt_file ? `<a href="api/results/isolator/${j.srt_file}" download class="btn-mini-action" title="Tải SRT" id="mini-dl-srt-${j.id}"><i class="fa-solid fa-file-lines"></i></a>` : `<button class="btn-mini-action" title="Tải SRT" id="mini-dl-srt-${j.id}" style="display:none"><i class="fa-solid fa-file-lines"></i></button>`}
                         </div>
                     </div>
                     ${pointsUsed ? `
@@ -1375,7 +2059,7 @@
             let dots = 0;
             liveLogInterval = setInterval(async () => {
                 try {
-                    const res = await fetch(`api/isolator/progress.php?job_id=${jobId}`);
+                    const res = await fetch(`api/voice_changer/progress.php?job_id=${jobId}`);
                     const data = await res.json();
                     if (!data.job) return;
                     const job = data.job;
@@ -1620,6 +2304,183 @@
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => dz.addEventListener(e, x => { x.preventDefault(); x.stopPropagation(); }));
         dz.addEventListener('drop', x => { if (x.dataTransfer.files.length) selectFile(x.dataTransfer.files[0]); });
     </script>
+    <!-- Voice Explorer Modal -->
+    <div class="explorer-modal" id="voiceExplorerModal">
+        <div class="explorer-content">
+            <div class="explorer-header">
+                <h2 style="margin:0; font-size: 1.5rem;"><i class="fa-solid fa-compass"
+                        style="color: var(--primary);"></i> Thư viện giọng đọc</h2>
+                <button class="btn-preview"
+                    style="background: transparent; color: var(--text-muted); font-size: 1.5rem;"
+                    onclick="closeVoiceExplorer()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="explorer-body">
+                <div class="search-filters">
+                    <!-- Top Row: Tab Selector -->
+                    <div
+                        style="display: flex; gap: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 15px; padding-bottom: -1px;">
+                        <button class="filter-chip active" onclick="setFilter('all', this)"
+                            style="background: none; border-radius: 0; padding: 10px 0; border: none; border-bottom: 2px solid var(--primary); font-weight: bold; color: white;">Thư
+                            viện giọng nói</button>
+                        <button class="filter-chip" onclick="setFilter('favorites', this)"
+                            style="background: none; border-radius: 0; padding: 10px 0; border: none; border-bottom: 2px solid transparent; color: var(--text-muted);">Yêu
+                            thích</button>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="search-bar"
+                        style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 15px; border-radius: 8px;">
+                        <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted);"></i>
+                        <input type="text" id="voiceSearch" placeholder="Tìm kiếm theo tên hoặc ID..."
+                            oninput="handleSearch()"
+                            style="background: transparent; color: white; border: none; outline: none; width: 100%;">
+                    </div>
+
+                    <!-- 4 Column Dropdowns in a subtle border box -->
+                    <div
+                        style="border: 1px solid #ef4444; border-radius: 8px; padding: 15px; background: rgba(0,0,0,0.15);">
+                        <div
+                            style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px;">
+                            <div>
+                                <label
+                                    style="display: block; font-size: 0.8rem; font-weight: bold; color: var(--text); margin-bottom: 8px;">Ngôn
+                                    ngữ</label>
+                                <select id="filterLanguage" class="form-control" style="display: none;"
+                                    onchange="handleAdvanceFilter()">
+                                    <option value="">Tất cả ngôn ngữ</option>
+                                    <option value="en">English</option>
+                                    <option value="vi">Vietnamese</option>
+                                    <option value="es">Spanish</option>
+                                    <option value="fr">French</option>
+                                    <option value="de">German</option>
+                                    <option value="it">Italian</option>
+                                    <option value="pt">Portuguese</option>
+                                    <option value="ru">Russian</option>
+                                    <option value="ja">Japanese</option>
+                                    <option value="ko">Korean</option>
+                                    <option value="zh">Chinese</option>
+                                    <option value="ar">Arabic</option>
+                                    <option value="hi">Hindi</option>
+                                    <option value="nl">Dutch</option>
+                                    <option value="pl">Polish</option>
+                                    <option value="tr">Turkish</option>
+                                    <option value="th">Thai</option>
+                                    <option value="id">Indonesian</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label
+                                    style="display: block; font-size: 0.8rem; font-weight: bold; color: var(--text); margin-bottom: 8px;">Giọng</label>
+                                <select id="filterAccent" class="form-control" style="display: none;"
+                                    onchange="handleAdvanceFilter()">
+                                    <option value="">Tất cả giọng</option>
+                                    <option value="american">American</option>
+                                    <option value="british">British</option>
+                                    <option value="australian">Australian</option>
+                                    <option value="canadian">Canadian</option>
+                                    <option value="irish">Irish</option>
+                                    <option value="scottish">Scottish</option>
+                                    <option value="welsh">Welsh</option>
+                                    <option value="indian">Indian</option>
+                                    <option value="south african">South African</option>
+                                    <option value="new zealand">New Zealand</option>
+                                    <option value="philippine">Philippine</option>
+                                    <option value="singaporean">Singaporean</option>
+                                    <option value="malaysian">Malaysian</option>
+                                    <option value="indonesian">Indonesian</option>
+                                    <option value="thai">Thai</option>
+                                    <option value="vietnamese">Vietnamese</option>
+                                    <option value="japanese">Japanese</option>
+                                    <option value="korean">Korean</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label
+                                    style="display: block; font-size: 0.8rem; font-weight: bold; color: var(--text); margin-bottom: 8px;">Danh
+                                    mục</label>
+                                <select id="filterCategory" class="form-control" style="display: none;"
+                                    onchange="handleAdvanceFilter()">
+                                    <option value="">Tất cả danh mục</option>
+                                    <option value="professional">Professional</option>
+                                    <option value="narrative_story">Narrative & Story</option>
+                                    <option value="conversational">Conversational</option>
+                                    <option value="entertainment">Entertainment</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label
+                                    style="display: block; font-size: 0.8rem; font-weight: bold; color: var(--text); margin-bottom: 8px;">Giới
+                                    tính</label>
+                                <select id="filterGender" class="form-control" style="display: none;"
+                                    onchange="handleAdvanceFilter()">
+                                    <option value="">Tất cả giới tính</option>
+                                    <option value="male">Nam</option>
+                                    <option value="female">Nữ</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label
+                                    style="display: block; font-size: 0.8rem; font-weight: bold; color: var(--text); margin-bottom: 8px;">Độ
+                                    tuổi</label>
+                                <select id="filterAge" class="form-control" style="display: none;"
+                                    onchange="handleAdvanceFilter()">
+                                    <option value="">Tất cả độ tuổi</option>
+                                    <option value="young">Trẻ em</option>
+                                    <option value="middle_aged">Trung niên</option>
+                                    <option value="old">Người lớn tuổi</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Switches & Clear -->
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; gap: 20px; align-items: center;">
+                                <label
+                                    style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer;">
+                                    <div class="switch" style="width: 36px; height: 20px;">
+                                        <input type="checkbox" id="toggleRate" onchange="handleAdvanceFilter()">
+                                        <span class="slider round" style="background-color: var(--border);"></span>
+                                    </div>
+                                    Tỷ lệ tùy chỉnh
+                                </label>
+                                <label
+                                    style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer;">
+                                    <div class="switch" style="width: 36px; height: 20px;">
+                                        <input type="checkbox" id="toggleModeration" onchange="handleAdvanceFilter()">
+                                        <span class="slider round" style="background-color: var(--border);"></span>
+                                    </div>
+                                    Kiểm duyệt trực tiếp
+                                </label>
+                            </div>
+
+                            <div style="display: flex; gap: 15px; align-items: center;">
+                                <div
+                                    style="background: rgba(255,255,255,0.1); border-radius: 12px; padding: 4px 12px; font-size: 0.75rem; font-weight: bold;">
+                                    BỘ LỌC ĐANG HOẠT ĐỘNG: <span id="activeFilterCount">0</span>
+                                </div>
+                                <button onclick="clearVoiceFilters()"
+                                    style="background: none; border: none; color: white; font-weight: bold; font-size: 0.85rem; cursor: pointer;">
+                                    <i class="fa-solid fa-xmark"></i> Xóa bộ lọc
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="voice-grid" id="voiceGrid">
+                    <!-- Loading state -->
+                    <div style="grid-column: 1/-1; text-align: center; padding: 50px; color: var(--text-muted);">
+                        <i class="fa-solid fa-spinner fa-spin fa-2x" style="margin-bottom: 15px;"></i>
+                        <p>Đang tải danh sách giọng đọc...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <!-- Team Modal -->
     <div id="teamModal" class="modal-overlay" onclick="if(event.target===this)closeTeamModal()"
         style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); z-index:9999; justify-content:center; align-items:center; padding:20px;">
@@ -1742,6 +2603,226 @@
                 transform: rotate(0deg);
             }
         }
+        /* Voice Explorer Modal */
+        .explorer-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .explorer-content {
+            background: #121214;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 1000px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .explorer-header {
+            padding: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .explorer-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .search-filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .search-bar {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-bar i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 12px 12px 12px 45px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white !important;
+            font-family: inherit;
+        }
+
+        .filter-chips {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .filter-chip {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: 0.2s;
+        }
+
+        .filter-chip.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white !important;
+        }
+
+        .voice-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .voice-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            transition: 0.2s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .voice-card:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .voice-card.selected {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        .voice-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .voice-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            color: white !important;
+        }
+
+        .voice-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .voice-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .voice-tag {
+            font-size: 0.7rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--text-muted);
+            text-transform: capitalize;
+        }
+
+        .voice-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            height: 2.8em;
+        }
+
+        .voice-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+        }
+
+        .btn-preview {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white !important;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-preview:hover {
+            background: var(--primary);
+        }
+
+        .btn-select {
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .voice-card:hover .btn-select {
+            background: var(--primary);
+            color: white !important;
+        }
+
     </style>
 
 </body>

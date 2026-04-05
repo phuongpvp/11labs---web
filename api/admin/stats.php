@@ -126,7 +126,7 @@ try {
     $revenueStats['total_revenue'] = $revenueStats['harvestable_balance'];
 
     // Lists
-    $topUsers = $db->query("SELECT u.id, u.email, u.plan, u.custom_plan_name, (u.quota_used + u.team_quota_used) as quota_used, (u.quota_total + u.team_quota_limit) as quota_total, u.expires_at, u.status, u.partner_api_key, COALESCE(u.key_type, 'partner') as key_type, u.max_parallel, u.created_at, p.email as parent_email, (COALESCE((SELECT SUM(characters_used) FROM usage_logs WHERE user_id = u.id AND DATE(created_at) = CURDATE()), 0) + COALESCE((SELECT SUM(points_used) FROM music_jobs WHERE user_id = u.id AND DATE(created_at) = CURDATE()), 0) + COALESCE((SELECT SUM(points_used) FROM isolation_jobs WHERE user_id = u.id AND DATE(created_at) = CURDATE()), 0) + COALESCE((SELECT SUM(points_used) FROM sfx_jobs WHERE user_id = u.id AND DATE(created_at) = CURDATE()), 0) + COALESCE((SELECT SUM(points_used) FROM stt_jobs WHERE user_id = u.id AND DATE(created_at) = CURDATE()), 0) + COALESCE((SELECT SUM(points_used) FROM dubbing_jobs WHERE user_id = u.id AND DATE(created_at) = CURDATE()), 0)) as today_used FROM users u LEFT JOIN users p ON u.parent_id = p.id ORDER BY FIELD(u.plan, 'supper_vip', 'vip', 'pro', 'basic', 'trial') ASC, (u.quota_used + u.team_quota_used) DESC")->fetchAll();
+    $topUsers = $db->query("SELECT u.id, u.email, u.plan, u.custom_plan_name, (u.quota_used + u.team_quota_used) as quota_used, (u.quota_total + u.team_quota_limit) as quota_total, u.expires_at, u.status, u.partner_api_key, COALESCE(u.key_type, 'partner') as key_type, u.max_parallel, u.created_at, p.email as parent_email, (COALESCE((SELECT SUM(characters_used) FROM usage_logs WHERE user_id = u.id AND DATE(created_at) = CURDATE()), 0) + COALESCE((SELECT SUM(points_used) FROM music_jobs WHERE user_id = u.id AND DATE(created_at) = CURDATE()), 0) + COALESCE((SELECT SUM(points_used) FROM isolation_jobs WHERE user_id = u.id AND DATE(created_at) = CURDATE()), 0) + COALESCE((SELECT SUM(points_used) FROM sfx_jobs WHERE user_id = u.id AND DATE(created_at) = CURDATE()), 0) + COALESCE((SELECT SUM(points_used) FROM stt_jobs WHERE user_id = u.id AND DATE(created_at) = CURDATE()), 0) + COALESCE((SELECT SUM(points_used) FROM dubbing_jobs WHERE user_id = u.id AND DATE(created_at) = CURDATE()), 0) + COALESCE((SELECT SUM(points_used) FROM voice_changer_jobs WHERE user_id = u.id AND DATE(created_at) = CURDATE()), 0)) as today_used FROM users u LEFT JOIN users p ON u.parent_id = p.id ORDER BY FIELD(u.plan, 'supper_vip', 'vip', 'pro', 'basic', 'trial') ASC, (u.quota_used + u.team_quota_used) DESC")->fetchAll();
     $recentPayments = $db->query("SELECT p.id, u.email, p.plan_id, p.amount, p.status, p.created_at FROM payments p JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC LIMIT 20")->fetchAll();
     $keys = $db->query("SELECT id, LEFT(key_encrypted, 20) as key_preview, credits_remaining, status, last_checked, assigned_worker_uuid, reset_at, created_at FROM api_keys ORDER BY credits_remaining DESC")->fetchAll();
 
@@ -161,7 +161,12 @@ try {
         $recentLogs6 = $db->query("SELECT dj.id, u.email, dj.points_used as characters_used, CONCAT('🌍 Lồng tiếng: ', dj.original_filename, ' (', dj.source_lang, ' → ', dj.target_lang, ')') as text_preview, dj.created_at, dj.status as job_status, dj.worker_uuid FROM dubbing_jobs dj JOIN users u ON dj.user_id = u.id ORDER BY dj.created_at DESC LIMIT 30")->fetchAll();
     } catch (Exception $e) { /* dubbing_jobs table may not exist yet */
     }
-    $recentLogs = array_merge($recentLogs1, $recentLogs2, $recentLogs3, $recentLogs4, $recentLogs5, $recentLogs6);
+    $recentLogs7 = [];
+    try {
+        $recentLogs7 = $db->query("SELECT vj.id, u.email, vj.points_used as characters_used, CONCAT('🎤 Đổi giọng: ', vj.source_file) as text_preview, vj.created_at, vj.status as job_status, vj.worker_uuid, vj.voice_id FROM voice_changer_jobs vj JOIN users u ON vj.user_id = u.id ORDER BY vj.created_at DESC LIMIT 30")->fetchAll();
+    } catch (Exception $e) { /* voice_changer_jobs table may not exist yet */
+    }
+    $recentLogs = array_merge($recentLogs1, $recentLogs2, $recentLogs3, $recentLogs4, $recentLogs5, $recentLogs6, $recentLogs7);
     usort($recentLogs, function ($a, $b) {
         return strtotime($b['created_at']) <=> strtotime($a['created_at']);
     });
@@ -191,14 +196,19 @@ try {
         $dbCompleted6 = $db->query("SELECT dj.id, u.email, dj.updated_at, dj.points_used as chars, 'DUBBING' as type, NULL as api_key_ids FROM dubbing_jobs dj JOIN users u ON dj.user_id = u.id WHERE dj.status = 'dubbed' ORDER BY dj.updated_at DESC LIMIT 30")->fetchAll();
     } catch (Exception $e) { /* dubbing_jobs table may not exist yet */
     }
-    $dbCompleted = array_merge($dbCompleted1, $dbCompleted2, $dbCompleted3, $dbCompleted4, $dbCompleted5, $dbCompleted6);
+    $dbCompleted7 = [];
+    try {
+        $dbCompleted7 = $db->query("SELECT vj.id, u.email, vj.completed_at as updated_at, vj.points_used as chars, 'VOICE_CHANGER' as type, vj.api_key_ids FROM voice_changer_jobs vj JOIN users u ON vj.user_id = u.id WHERE vj.status = 'completed' ORDER BY vj.completed_at DESC LIMIT 30")->fetchAll();
+    } catch (Exception $e) { /* voice_changer_jobs table may not exist yet */
+    }
+    $dbCompleted = array_merge($dbCompleted1, $dbCompleted2, $dbCompleted3, $dbCompleted4, $dbCompleted5, $dbCompleted6, $dbCompleted7);
     usort($dbCompleted, function ($a, $b) {
         return strtotime($b['updated_at']) <=> strtotime($a['updated_at']);
     });
 
     $completedLogStr = "";
     foreach (array_slice($dbCompleted, 0, 50) as $row) {
-        $typeLabel = $row['type'] === 'ISOLATOR' ? ' [Tách giọng]' : ($row['type'] === 'MUSIC' ? ' [Tạo nhạc]' : ($row['type'] === 'SFX' ? ' [Hiệu ứng]' : ($row['type'] === 'STT' ? ' [Giọng→Chữ]' : ($row['type'] === 'DUBBING' ? ' [Lồng tiếng]' : ''))));
+        $typeLabel = $row['type'] === 'ISOLATOR' ? ' [Tách giọng]' : ($row['type'] === 'MUSIC' ? ' [Tạo nhạc]' : ($row['type'] === 'SFX' ? ' [Hiệu ứng]' : ($row['type'] === 'STT' ? ' [Giọng→Chữ]' : ($row['type'] === 'DUBBING' ? ' [Lồng tiếng]' : ($row['type'] === 'VOICE_CHANGER' ? ' [Đổi giọng]' : '')))));
         $keyInfo = (!empty($row['api_key_ids'])) ? " Key(s): " . $row['api_key_ids'] : '';
         $completedLogStr .= "[" . $row['updated_at'] . "] Job " . $row['id'] . " COMPLETED. User: " . $row['email'] . " (" . $row['chars'] . " ký tự){$typeLabel}{$keyInfo}\n";
     }

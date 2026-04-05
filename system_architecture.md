@@ -1,6 +1,6 @@
 # 🏗️ Kiến trúc hệ thống 11labs.id.vn
 
-> Tài liệu bảo trì cho toàn bộ hệ thống. Cập nhật: 2026-03-26.
+> Tài liệu bảo trì cho toàn bộ hệ thống. Cập nhật: 2026-04-03.
 
 ---
 
@@ -253,8 +253,12 @@ sequenceDiagram
 | **Isolator** | `isolator/upload.php` | `isolator/progress.php` | `isolation_jobs` | 8 hex chars | File upload |
 | **STT** | `stt/upload.php` | `stt/progress.php` | `stt_jobs` | `ST` | 180 credit/phút |
 | **Dubbing** | `dubbing/compose.php` | `dubbing/progress.php` | `dubbing_jobs` | `DB` | 3200 credit/phút |
+| **Voice Changer**| `voice_changer/upload.php`| `voice_changer/progress.php`| `voice_changer_jobs`| 8 hex chars | TBD credit/job |
 
-> Music, SFX, Isolator, STT, Dubbing: Worker tự poll job pending (khác với TTS được dispatch trực tiếp).
+> Music, SFX, Isolator, STT, Dubbing, Voice Changer: Worker tự poll job pending (khác với TTS được dispatch trực tiếp).
+
+> [!NOTE]
+> **SRT Generation**: Tính năng TTS tạo file phụ đề (SRT) miễn phí vì ElevenLabs TTS API tự động trả về `alignment data` (đồng bộ thời gian từ). Tuy nhiên, ElevenLabs Voice Changer (STS) **không** trả về alignment data. Do đó, nếu cần tạo SRT cho Voice Changer, hệ thống phải chạy thêm một bước STT (Speech-to-Text) độc lập trên file kết quả, điều này sẽ tiêu tốn thêm credit.
 
 ### Dubbing Error Recovery
 | Lỗi | Hành xử |
@@ -563,3 +567,45 @@ Khách hàng đại lý có thể giới thiệu bạn bè và nhận bonus khi 
 - Config: `telegram_bot_token` + `telegram_chat_id` trong `settings.json`
 - Helper: `sendTelegramNotify()` trong `api/config.php`
 - Admin UI: Section "Thông báo Telegram" trong Cài đặt Site
+
+---
+
+## 18. Nhật ký cập nhật (Changelog)
+
+### [03/04/2026] Tích hợp hoàn thiện Voice Changer (Đổi giọng)
+1. **Nâng cấp Giao diện chọn giọng (Voice Explorer Modal)**: Tích hợp toàn bộ popup Thư viện giọng đọc từ module TTS (`customer.html`) sang `voice_changer.html`. Bao gồm bộ lọc, tìm kiếm, lưu trữ lịch sử bằng LocalStorage.
+2. **Sửa lỗi API Backend**: Khắc phục lỗi copy/paste nhầm endpoint của Isolator. Các hàm `loadJobs()`, `startLiveLog()`, tải MP3 đã trỏ đúng vào `api/voice_changer/`. Tiến trình và danh sách tác vụ đã hoạt động.
+3. **Cập nhật Admin Panel (`concucac.php` & `stats.php`)**:
+   - Tác vụ Đổi giọng (Voice Changer) hiện đã hiển thị trong "Hoạt động gần đây" và "Logs hoàn thành".
+   - Tín dụng sử dụng của Đổi giọng được cộng dồn vào `today_used` (Thống kê số ký tự dùng trong ngày).
+4. **Vấn đề Phụ đề SRT**: Đã ẩn/xóa tính năng SRT đối với Voice Changer. Lý do: ElevenLabs STS API không hỗ trợ trả về `alignment data` (đồng bộ thời gian) tự động, nên muốn làm phải thêm một bước STT độc lập, tốn thêm Credit và thời gian. Tạm thời không áp dụng để tối ưu cho người dùng.
+
+---
+
+## 19. Kiến trúc Dự phòng & Phân tải bằng Proxy Xoay Dân Cư (Backup Plan)
+
+> **Hoàn cảnh đưa ra giải pháp**: Hệ thống chính chạy mã Python ghép MP3 trên nền Google Colab vì Shared Hosting hiện tại quá yếu (chặn FFmpeg, Timeout 60s, không chạy process ngầm). Nếu tương lai Google Colab thay đổi chính sách/sập diện rộng, BẮT BUỘC phải dời code worker sang một con VPS (Cloud Server) Linux mua riêng.
+
+### 19.1 Bài toán IP tĩnh trên VPS & Giải pháp "Data Pool Rotating Proxy"
+Việc nén toàn bộ 26 luồng xử lý (tương đương 26 Colabs hiện tại) vào một IP Host Server duy nhất của con VPS sẽ khiến ElevenLabs quét và cấm IP máy chủ (Rate-Limit 429) do tần suất truy cập bất thường.
+
+⚠️ **Sai lầm phổ biến khi Scale**: Thuê Proxy VN theo Cổng (như Shoplike). Để duy trì 26 "Mặt nạ IP" liên tục cho 26 luồng, cần thuê 26 API Keys Proxy -> Quản lý phức tạp và cực kỳ tốn tiền tỉ lệ thuận theo lượng máy chạm.
+
+✅ **Giải pháp tối ưu (Per-Request Data Proxies)**:
+- Chuyển sang sử dụng nền tảng Proxy quốc tế **tính tiền theo Băng thông (GB)** (e.g. *Webshare*, *IPRoyal*, *Smartproxy*).
+- **Cơ chế hoạt động**: Nhà cung cấp chỉ giao cho Admin đúng **1 Cấu hình Proxy (Endpoint)** duy nhất. Nhưng khi PM2 kích hoạt **26 tiến trình Code chạy song song** trên VPS cùng đâm vào Endpoint đó, Mạng lưới Proxy sẽ tự động phân tán 26 gói tin thành **26 IP dân cư khác nhau ở cùng một thời điểm**.
+- Xóa bỏ hoàn toàn "đầu danh tính" máy chủ VPS.
+
+### 19.2 Lưu đồ Mạng Lưới Kiến trúc (Khi kích hoạt Backup)
+```mermaid
+graph TB
+    U[Luồng xử lý Web] --> DB[(Jobs Cần Chạy)]
+    DB --> W[Luồng PM2 chạy Ngầm app.py trên VPS Backup]
+    W -- Requests mang Cấu Hình Proxy --> P[Cổng Mạng Proxy Xoay Quốc Tế]
+    P -- Luôn tự chia ra Cả Ngàn IP Dân Cư Sinh Động --> E[ElevenLabs API Server]
+```
+
+**Các bước cấu hình khi chuyển đổi:**
+1. Khởi chạy VPS Linux mới. Cài đặt Python và sao chép Code `api/worker/app.py` lên máy chủ.
+2. Thiết lập cờ `USE_PROXY = True` tại cấu hình module `requests` bên trong code Python. Dán URL Proxy "Xoay vòng theo Request" vào biến môi trường.
+3. Chạy lệnh đa luồng `pm2 start app.py -i 26`. Code sẽ tự động lẩn trốn dưới 26 địa chỉ IP Dân cư liên tục cho đến khi hoàn thành mọi Audio File. Hệ thống sống trở lại mà không cần sự hiện diện của Colab.
