@@ -927,18 +927,18 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
                 # Determine if this is a V3 model
                 is_v3 = model_id and 'v3' in model_id.lower()
 
-                # ===== V2 DYNAMIC CHUNK SIZING =====
-                # For non-V3: check key credits, resize chunks to fit key's remaining credits
-                # V3: completely untouched (overlap technique needs large chunks)
-                # V2 Tonal: CJK/Thai/Vietnamese chars are 3-5x heavier → cap at 1500
-                v2_tonal_max = 1500
-                if not is_v3 and is_tonal_language(chunks[i]) and len(chunks[i]) > v2_tonal_max:
+                # ===== DYNAMIC CHUNK SIZING =====
+                # Tonal: CJK/Thai/Vietnamese chars are 3-5x heavier → cap at 1500 cho tất cả models (bao gồm V3)
+                tonal_max = 1500
+                if is_tonal_language(chunks[i]) and len(chunks[i]) > tonal_max:
                     remaining_text = ' '.join(chunks[i:])
-                    new_chunks = smart_split(remaining_text, v2_tonal_max)
+                    new_chunks = smart_split(remaining_text, tonal_max)
                     if len(new_chunks) != len(chunks) - i:
                         chunks[i:] = new_chunks
                         report_progress(i, "processing", total=len(chunks))
-                        log_to_backend(f"📐 V2 Tonal: chunk quá dài → giảm xuống ≤{v2_tonal_max} chars ({len(new_chunks)} chunks còn lại)", job_id=job_id)
+                        log_to_backend(f"📐 Tonal: chunk quá dài → giảm xuống ≤{tonal_max} chars ({len(new_chunks)} chunks còn lại)", job_id=job_id)
+                        
+                # Check credits for non-V3 models (V3 untouched to preserve overlap logic)
                 if not is_v3 and v2_last_checked_key != current_acc_idx:
                     v2_last_checked_key = current_acc_idx
                     v2_credits = get_api_credits(api_key)
@@ -1442,11 +1442,13 @@ def convert():
 
         # Dynamic chunk size based on model + language
         # V3 uses overlap technique (2 API calls/chunk) → needs balanced chunk size
-        # V3 tonal (Vietnamese...) keeps 4500 for best overlap quality
+        # Tonal languages (Vietnamese, Japanese...) take longer → cap at 1500 to avoid timeout
         # V3 non-tonal uses 3000 (smaller to reduce timeout, but large enough for overlap)
-        # V2/Turbo/Flash are fast → keep 4500
+        # V2/Turbo/Flash non-tonal are fast → keep 4500
         is_v3_model = model_id and 'v3' in model_id.lower()
-        if is_v3_model and not is_tonal_language(text):
+        if is_tonal_language(text):
+            chunk_size = 1500
+        elif is_v3_model:
             chunk_size = 3000
         else:
             chunk_size = MAX_CHUNK

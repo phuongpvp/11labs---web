@@ -171,19 +171,68 @@ if ($method === 'POST') {
             if (!$job)
                 jsonResponse(['error' => 'Job not found'], 404);
 
-            // Partial refund: only refund UNPROCESSED chars
+            $attempts = (int) ($job['attempts'] ?? 0);
             $totalChars = mb_strlen($job['full_text'], 'UTF-8');
-            $unprocessedChars = max(0, $totalChars - $processedChars);
 
-            if ($unprocessedChars > 0 && $processedChars > 0) {
-                // Only do partial refund when resuming — refund the chars that WON'T be charged again
-                // The new worker will re-charge for remaining text when dispatched
-                // Actually: dispatch deducts full text chars. So we need to refund only the PROCESSED portion
-                // because dispatch will re-deduct the full remaining text.
-                // Wait — dispatch deducts based on full_text length. But we'll send truncated text.
-                // So NO refund needed here. The new dispatch will only charge for remaining text.
-                // Keep it simple: no refund on release, dispatch charges remaining text only.
+            // Increment attempts counter
+            $db->prepare("UPDATE conversion_jobs SET attempts = attempts + 1 WHERE id = ?")->execute([$jobId]);
+            $attempts++;
+
+            // === RELEASE LIMIT: Nếu đã release >= 2 lần → fail luôn, không nhả tiếp ===
+            if ($attempts >= 2) {
+                logToFile('admin_actions.log', "RELEASE_JOB LIMIT: Job $jobId đã release $attempts lần. Hủy job và hoàn trả ký tự.");
+
+                // Full refund
+                if ($totalChars > 0) {
+                    $db->beginTransaction();
+                    try {
+                        $stmtU = $db->prepare("SELECT quota_used, team_quota_used, parent_id FROM users WHERE id = ? FOR UPDATE");
+                        $stmtU->execute([$job['user_id']]);
+                        $userData = $stmtU->fetch();
+
+                        if ($userData) {
+                            $personalRefund = min($totalChars, $userData['quota_used']);
+                            $teamRefund = $totalChars - $personalRefund;
+
+                            if ($personalRefund > 0) {
+                                $db->prepare("UPDATE users SET quota_used = quota_used - ? WHERE id = ?")
+                                    ->execute([$personalRefund, $job['user_id']]);
+                            }
+                            if ($teamRefund > 0 && !empty($userData['parent_id'])) {
+                                $db->prepare("UPDATE users SET team_quota_used = team_quota_used - ? WHERE id = ?")
+                                    ->execute([$teamRefund, $job['user_id']]);
+                                $db->prepare("UPDATE users SET quota_used = quota_used - ? WHERE id = ?")
+                                    ->execute([$teamRefund, $userData['parent_id']]);
+                            }
+                        }
+                        $db->commit();
+                    } catch (Exception $e) {
+                        $db->rollBack();
+                    }
+                }
+
+                // Mark as failed
+                $failMsg = "failed: Timeout liên tục sau $attempts lần thử trên nhiều máy chủ. Vui lòng thử lại sau. (Đã hoàn trả $totalChars ký tự)";
+                $db->prepare("UPDATE conversion_jobs SET status = ?, worker_uuid = NULL WHERE id = ?")
+                    ->execute([mb_substr($failMsg, 0, 255, 'UTF-8'), $jobId]);
+
+                // Log refund to worker_logs for admin visibility
+                try {
+                    $refundMsg = "🚫 Job $jobId bị hủy sau $attempts lần timeout liên tiếp. Đã hoàn trả $totalChars ký tự cho User {$job['user_id']}.";
+                    $stmtL = $db->prepare("INSERT INTO worker_logs (worker_uuid, worker_name, job_id, message, level) VALUES (?, ?, ?, ?, ?)");
+                    $stmtL->execute(['SYSTEM', 'System Engine', $jobId, $refundMsg, 'error']);
+                } catch (Exception $e) {}
+
+                // Cooldown the failing worker
+                if ($workerUuid) {
+                    $db->prepare("UPDATE workers SET cooldown_until = (NOW() + INTERVAL 5 MINUTE) WHERE worker_uuid = ?")
+                        ->execute([$workerUuid]);
+                }
+
+                jsonResponse(['status' => 'failed', 'message' => "Job cancelled after $attempts release attempts"]);
             }
+
+            // === NORMAL RELEASE: attempts < 2, nhả cho máy khác ===
 
             // Update job: reset to pending with partial progress info
             $partialDbPath = $partialPath ? ($jobId . '_partial.mp3') : null;
@@ -197,7 +246,7 @@ if ($method === 'POST') {
                     ->execute([$workerUuid]);
             }
 
-            logToFile('admin_actions.log', "RELEASE_JOB: Job $jobId released. $processedChars/$totalChars chars done. Redispatching...");
+            logToFile('admin_actions.log', "RELEASE_JOB: Job $jobId released (attempt $attempts/2). $processedChars/$totalChars chars done. Redispatching...");
 
             // Immediate redispatch
             sleep(2);
