@@ -1173,7 +1173,7 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
             </div>
 
             <div class="section">
-                <h2>Thông báo Telegram</h2>
+                <h2>🔔 Telegram Hệ thống (Worker Offline, Credit, IP Block...)</h2>
                 <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
                     <div class="form-group"><label>Bot Token</label><input type="text" id="tgToken"
                             class="form-control"></div>
@@ -1183,6 +1183,15 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
                         <input type="checkbox" id="tgEnabled" style="width: 20px; height: 20px;">
                         <label style="margin: 0;">Thông báo khi máy Offline</label>
                     </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>💰 Telegram Khách hàng (Đăng ký, Chuyển tiền, Duyệt)</h2>
+                <div style="background: rgba(36, 161, 222, 0.08); padding: 15px; border-radius: 8px; border: 1px solid rgba(36, 161, 222, 0.25);">
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Tách riêng thông báo khách hàng sang Bot khác. Nếu để trống sẽ dùng chung Bot hệ thống ở trên. Chat ID dùng chung với Bot trên.</div>
+                    <div class="form-group"><label>Bot Token (Bot 2)</label><input type="text" id="tgToken2"
+                            class="form-control" placeholder="Để trống = dùng chung Bot trên"></div>
                     <button class="btn btn-primary" onclick="saveTelegramSettings()"><i class="fa-solid fa-save"></i>
                         Lưu Telegram</button>
                     <div id="tgStatus" style="margin-top: 10px; font-size: 0.9rem;"></div>
@@ -2006,6 +2015,7 @@ email2@example.com:password2"></textarea>
                         document.getElementById('tgToken').value = data.settings.telegram_bot_token || '';
                         document.getElementById('tgChatId').value = data.settings.telegram_chat_id || '';
                         document.getElementById('tgEnabled').checked = data.settings.telegram_enabled == '1';
+                        document.getElementById('tgToken2').value = data.settings.telegram_bot_token_2 || '';
                     }
 
                     // Update Logs if we are on logs tab or just load them if visible
@@ -2546,7 +2556,8 @@ email2@example.com:password2"></textarea>
                         settings: {
                             telegram_bot_token: token,
                             telegram_chat_id: chatId,
-                            telegram_enabled: enabled
+                            telegram_enabled: enabled,
+                            telegram_bot_token_2: document.getElementById('tgToken2').value.trim()
                         }
                     })
                 });

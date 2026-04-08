@@ -4,7 +4,7 @@ require_once __DIR__ . '/config.php';
 function getTelegramConfig()
 {
     $db = getDB();
-    $stmt = $db->query("SELECT config_key, config_value FROM system_config WHERE config_key IN ('telegram_bot_token', 'telegram_chat_id', 'telegram_enabled')");
+    $stmt = $db->query("SELECT config_key, config_value FROM system_config WHERE config_key IN ('telegram_bot_token', 'telegram_chat_id', 'telegram_enabled', 'telegram_bot_token_2')");
     $config = [];
     while ($row = $stmt->fetch()) {
         $config[$row['config_key']] = $row['config_value'];
@@ -41,7 +41,45 @@ function sendTelegramMessage($message, $checkEnabled = true)
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-    curl_setopt($ch, CURLOPT_TIMEOUT, 3); // Reduced from 10s to 3s to prevent UI blocking
+    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    return $response !== false;
+}
+
+/**
+ * Gửi qua Bot Telegram thứ 2 (Khách hàng: đăng ký, thanh toán, duyệt)
+ * Nếu chưa cấu hình token 2 → fallback về token 1
+ */
+function sendTelegramMessage2($message)
+{
+    $config = getTelegramConfig();
+
+    $token = $config['telegram_bot_token_2'] ?? '';
+    $chatId = $config['telegram_chat_id'] ?? ''; // Dùng chung Chat ID với Bot 1
+
+    // Fallback: nếu chưa cấu hình token 2 thì dùng token 1
+    if (!$token) {
+        return sendTelegramMessage($message, false);
+    }
+
+    if (!$chatId) {
+        return false;
+    }
+
+    $url = "https://api.telegram.org/bot{$token}/sendMessage";
+    $data = [
+        'chat_id' => $chatId,
+        'text' => $message,
+        'parse_mode' => 'HTML'
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
     $response = curl_exec($ch);
     curl_close($ch);
 
@@ -55,8 +93,7 @@ function notifyNewRegistration($email, $plan)
     $msg .= "📦 Gói: <b>" . strtoupper($plan) . "</b>\n\n";
     $msg .= "<i>Anh vào Admin kiểm tra và kích hoạt nhé!</i>";
 
-    // Set $checkEnabled to false to bypass the Offline alert toggle
-    return sendTelegramMessage($msg, false);
+    return sendTelegramMessage2($msg);
 }
 
 function notifyPaymentSent($email, $plan, $amount, $memo)
@@ -68,7 +105,7 @@ function notifyPaymentSent($email, $plan, $amount, $memo)
     $msg .= "📝 Nội dung: <code>$memo</code>\n\n";
     $msg .= "<i>Khách báo đã chuyển tiền. Anh kiểm tra bank và duyệt nhé!</i>";
 
-    return sendTelegramMessage($msg, false);
+    return sendTelegramMessage2($msg);
 }
 
 function notifyPaymentApproved($email, $plan)
@@ -78,7 +115,7 @@ function notifyPaymentApproved($email, $plan)
     $msg .= "🚀 Gói: <b>" . strtoupper($plan) . "</b>\n\n";
     $msg .= "<i>Hệ thống đã tự động kích hoạt gói cước cho khách.</i>";
 
-    return sendTelegramMessage($msg, false);
+    return sendTelegramMessage2($msg);
 }
 
 function checkLowCreditAlert()
