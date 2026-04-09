@@ -501,44 +501,37 @@ def get_last_words(text, word_count=15):
     return ' '.join(words[-word_count:])
 
 def is_tonal_language(text):
-    """Detect if text contains tonal language characters (Vietnamese, Chinese, Thai, Lao, Burmese).
-    V3 overlap technique is only needed for these languages to maintain prosody continuity.
-    Non-tonal languages (English, Spanish, French, etc.) sound fine without overlap."""
+    """Detect if text is a non-Latin language that requires smaller chunks on ElevenLabs.
+    Instead of whitelisting specific scripts (and missing some like Korean was),
+    we flip the logic: if text is primarily Latin → fast, otherwise → heavy (cap 1500).
+
+    Latin-based (fast): English, French, Spanish, German, Italian, Portuguese, Polish, etc.
+    Non-Latin (heavy): Korean, Japanese, Chinese, Vietnamese, Arabic, Hindi, Russian,
+                        Thai, Greek, Hebrew, Bengali, and ALL other non-Latin scripts.
+
+    Vietnamese uses Latin script BUT its extended chars (ắ,ằ,ẩ,ế,ệ,ố...) fall in
+    Unicode 0x1E00+ (outside our Latin range 0x0000-0x024F), so it's correctly detected as heavy."""
     if not text:
         return False
     # Sample first 500 chars for performance
     sample = text[:500]
-    tonal_count = 0
+    latin_count = 0
     total_alpha = 0
     for ch in sample:
-        cp = ord(ch)
-        # Vietnamese diacritics (Latin chars with Vietnamese-specific marks)
-        if ch in 'ắằẳẵặấầẩẫậđéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵơưâêôĐ':
-            tonal_count += 1
-        # CJK Unified Ideographs (Chinese/Japanese Kanji)
-        elif 0x4E00 <= cp <= 0x9FFF or 0x3400 <= cp <= 0x4DBF:
-            tonal_count += 1
-        # Hiragana (Japanese)
-        elif 0x3040 <= cp <= 0x309F:
-            tonal_count += 1
-        # Katakana (Japanese)
-        elif 0x30A0 <= cp <= 0x30FF:
-            tonal_count += 1
-        # Thai script
-        elif 0x0E00 <= cp <= 0x0E7F:
-            tonal_count += 1
-        # Lao script
-        elif 0x0E80 <= cp <= 0x0EFF:
-            tonal_count += 1
-        # Myanmar/Burmese script
-        elif 0x1000 <= cp <= 0x109F:
-            tonal_count += 1
         if ch.isalpha():
             total_alpha += 1
-    # If >15% of alphabetic chars are tonal → tonal language
+            cp = ord(ch)
+            # Basic Latin (A-Z, a-z) + Latin Extended-A + Latin Extended-B
+            # Covers: English, French, Spanish, German, Italian, Portuguese,
+            #         Polish, Czech, Romanian, Turkish, Hungarian, etc.
+            # Does NOT cover: Vietnamese Extended Additional (0x1E00+),
+            #                 Cyrillic, Greek, Arabic, CJK, Hangul, Thai, etc.
+            if cp <= 0x024F:
+                latin_count += 1
     if total_alpha == 0:
         return False
-    return (tonal_count / total_alpha) > 0.15
+    # If less than 85% of alphabetic chars are basic Latin → heavy language
+    return (latin_count / total_alpha) < 0.85
 
 def strip_audio_tags(text):
     """Remove audio/emotion tags like [pause], [laughs], [whispers], [excited] etc. from text for clean SRT output"""
@@ -577,9 +570,10 @@ def generate_srt(all_alignments):
     full_text = "".join(full_chars)
 
     # 2. Split into sentences using regex (logic from queueService.ts)
-    # Matches any character until a sentence ending punctuation (.!?) followed by space or end of string
+    # Matches any character until a sentence ending punctuation (.!?) followed by space or end of string.
+    # For CJK (Chinese/Japanese) punctuation (。！？), it doesn't require a trailing space.
     # We use m.span(1) to get the sentence part without the trailing space
-    matches = list(re.finditer(r"(.+?[.!?])(\s+|$)", full_text, flags=re.DOTALL))
+    matches = list(re.finditer(r"(.+?(?:[.!?]+(?=\s|$)|[。！？]+))(\s*)", full_text, flags=re.DOTALL))
 
     last_idx = 0
 
@@ -928,7 +922,7 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
                 is_v3 = model_id and 'v3' in model_id.lower()
 
                 # ===== DYNAMIC CHUNK SIZING =====
-                # Tonal: CJK/Thai/Vietnamese chars are 3-5x heavier → cap at 1500 cho tất cả models (bao gồm V3)
+                # Non-Latin languages are heavier on ElevenLabs → cap at 1500 cho tất cả models (bao gồm V3)
                 tonal_max = 1500
                 if is_tonal_language(chunks[i]) and len(chunks[i]) > tonal_max:
                     remaining_text = ' '.join(chunks[i:])
@@ -936,7 +930,7 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
                     if len(new_chunks) != len(chunks) - i:
                         chunks[i:] = new_chunks
                         report_progress(i, "processing", total=len(chunks))
-                        log_to_backend(f"📐 Tonal: chunk quá dài → giảm xuống ≤{tonal_max} chars ({len(new_chunks)} chunks còn lại)", job_id=job_id)
+                        log_to_backend(f"📐 Non-Latin: chunk quá dài → giảm xuống ≤{tonal_max} chars ({len(new_chunks)} chunks còn lại)", job_id=job_id)
                         
                 # Check credits for non-V3 models (V3 untouched to preserve overlap logic)
                 if not is_v3 and v2_last_checked_key != current_acc_idx:
@@ -959,7 +953,7 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
                             log_to_backend(f"📐 V2 Dynamic: Key {acc.get('id')} có {v2_credits} credits → chunk ≤{new_max} chars ({len(new_chunks)} chunks còn lại)", job_id=job_id)
                         elif v2_credits >= MAX_CHUNK and current_chunk_len < MAX_CHUNK - 500 and not is_tonal_language(chunks[i]):
                             # Key đủ credit, phục hồi chunk về kích thước bình thường
-                            # KHÔNG phục hồi nếu là tonal language (CJK/Thai/Viet) — giữ cap 1500
+                            # KHÔNG phục hồi nếu là non-Latin language — giữ cap 1500
                             remaining_text = ' '.join(chunks[i:])
                             new_chunks = smart_split(remaining_text, MAX_CHUNK)
                             if len(new_chunks) < len(chunks) - i:
@@ -1441,10 +1435,10 @@ def convert():
             return jsonify({'error': 'No valid accounts'}), 401
 
         # Dynamic chunk size based on model + language
-        # V3 uses overlap technique (2 API calls/chunk) → needs balanced chunk size
-        # Tonal languages (Vietnamese, Japanese...) take longer → cap at 1500 to avoid timeout
-        # V3 non-tonal uses 3000 (smaller to reduce timeout, but large enough for overlap)
-        # V2/Turbo/Flash non-tonal are fast → keep 4500
+        # Non-Latin languages (Korean, Japanese, Chinese, Vietnamese, Arabic, Hindi, Russian...)
+        # are heavier on ElevenLabs → cap at 1500 to avoid timeout
+        # V3 Latin uses 3000 (smaller than V2 due to overlap technique doubling API calls)
+        # V2/Turbo/Flash Latin are fast → keep 4500
         is_v3_model = model_id and 'v3' in model_id.lower()
         if is_tonal_language(text):
             chunk_size = 1500
