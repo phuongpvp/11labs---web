@@ -923,7 +923,7 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
 
                 # ===== DYNAMIC CHUNK SIZING =====
                 # Non-Latin languages are heavier on ElevenLabs → cap at 1500 cho tất cả models (bao gồm V3)
-                tonal_max = 1500
+                tonal_max = 2500
                 if is_tonal_language(chunks[i]) and len(chunks[i]) > tonal_max:
                     remaining_text = ' '.join(chunks[i:])
                     new_chunks = smart_split(remaining_text, tonal_max)
@@ -1477,7 +1477,7 @@ def convert():
         # V2/Turbo/Flash Latin are fast → keep 4500
         is_v3_model = model_id and 'v3' in model_id.lower()
         if is_tonal_language(text):
-            chunk_size = 1500
+            chunk_size = 2500
         elif is_v3_model:
             chunk_size = 3000
         else:
