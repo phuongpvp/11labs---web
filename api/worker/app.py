@@ -998,9 +998,45 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
                         trim_point_ms = overlap_duration_ms + 500
                         if trim_point_ms < len(combined_audio):
                             seg = combined_audio[trim_point_ms:]
+
+                            # Step 4: Also trim alignment to match trimmed audio
+                            # The alignment contains chars/timing for the FULL combined text
+                            # (overlap + current chunk). We must remove overlap chars and
+                            # shift all timestamps back by the trim duration so SRT is correct.
+                            if alignment and isinstance(alignment, dict):
+                                overlap_char_count = len(smart_overlap) + 1  # +1 for space between overlap and chunk
+                                trim_time_sec = trim_point_ms / 1000.0
+
+                                a_chars = alignment.get('characters', [])
+                                a_starts = alignment.get('character_start_times_seconds', [])
+                                a_ends = alignment.get('character_end_times_seconds', [])
+
+                                if len(a_chars) > overlap_char_count:
+                                    alignment['characters'] = a_chars[overlap_char_count:]
+                                    alignment['character_start_times_seconds'] = [
+                                        max(0, t - trim_time_sec) for t in a_starts[overlap_char_count:]
+                                    ]
+                                    alignment['character_end_times_seconds'] = [
+                                        max(0, t - trim_time_sec) for t in a_ends[overlap_char_count:]
+                                    ]
+                                else:
+                                    # Edge case: alignment has fewer chars than overlap
+                                    # Discard alignment to avoid broken SRT
+                                    alignment = None
+                                    logger.warning(f"V3 Overlap: alignment chars ({len(a_chars)}) <= overlap ({overlap_char_count}), skipping alignment")
                         else:
                             # Fallback: use combined audio as-is if trim would remove everything
                             seg = combined_audio
+                            # Still strip overlap chars from alignment to avoid duplicate text in SRT
+                            if alignment and isinstance(alignment, dict):
+                                overlap_char_count = len(smart_overlap) + 1
+                                a_chars = alignment.get('characters', [])
+                                a_starts = alignment.get('character_start_times_seconds', [])
+                                a_ends = alignment.get('character_end_times_seconds', [])
+                                if len(a_chars) > overlap_char_count:
+                                    alignment['characters'] = a_chars[overlap_char_count:]
+                                    alignment['character_start_times_seconds'] = a_starts[overlap_char_count:]
+                                    alignment['character_end_times_seconds'] = a_ends[overlap_char_count:]
                             logger.warning(f"V3 Overlap trim point ({trim_point_ms}ms) >= audio length ({len(combined_audio)}ms), using full audio")
                     else:
                         # Overlap text too short, generate normally
