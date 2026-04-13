@@ -1474,13 +1474,15 @@ def convert():
             return jsonify({'error': 'No valid accounts'}), 401
 
         # Dynamic chunk size based on model + language
-        # Non-Latin languages (Korean, Japanese, Chinese, Vietnamese, Arabic, Hindi, Russian...)
-        # are heavier on ElevenLabs → cap at 2000 to avoid timeout
-        # V3 Latin uses 3000 (smaller than V2 due to overlap technique doubling API calls)
-        # V2/Turbo/Flash Latin are fast → keep 4500
+        # V3 non-Latin: 2000 (balance giữa timeout và voice drift)
+        # V3 Latin: 3000 (overlap technique doubles API calls)
+        # V2/Turbo/Flash non-Latin: 1500 (tránh timeout, V2 không bị drift nhờ request stitching)
+        # V2/Turbo/Flash Latin: 4500 (fast)
         is_v3_model = model_id and 'v3' in model_id.lower()
-        if is_tonal_language(text):
+        if is_v3_model and is_tonal_language(text):
             chunk_size = 2000
+        elif is_tonal_language(text):
+            chunk_size = 1500
         elif is_v3_model:
             chunk_size = 3000
         else:
