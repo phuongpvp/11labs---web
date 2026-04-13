@@ -911,8 +911,8 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
                     raise Exception(f"Account at index {current_acc_idx} has no 'key'")
 
                 # Log key switch (only when changing to a different key)
+                cur_key_id = acc.get('id', '?')
                 if current_acc_idx != _last_logged_key_idx:
-                    cur_key_id = acc.get('id', '?')
                     key_usage_counter[cur_key_id] = key_usage_counter.get(cur_key_id, 0) + (1 if _last_logged_key_idx >= 0 else 0)
                     if _last_logged_key_idx >= 0:
                         log_to_backend(f"🔄 Đổi key: #{cur_key_id} lần {key_usage_counter[cur_key_id]} (key thứ {current_acc_idx+1}/{len(valid_accounts)})", job_id=job_id)
@@ -920,10 +920,13 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
 
                 # Determine if this is a V3 model
                 is_v3 = model_id and 'v3' in model_id.lower()
+                
+                # Global Tracking Log
+                log_to_backend(f"▶️ Bắt đầu Chunk {i+1}/{len(chunks)} ({len(chunks[i])} chars ~ cần {len(chunks[i])} điểm) - Key #{cur_key_id}", job_id=job_id)
 
-                # ===== DYNAMIC CHUNK SIZING =====
-                # Non-Latin languages are heavier on ElevenLabs → cap at 1500 cho tất cả models (bao gồm V3)
-                tonal_max = 2500
+                # Non-Latin languages are heavier on ElevenLabs
+                # JP/KR/CN/VI/AR etc. → cap at 1500 for all models to avoid timeout
+                tonal_max = 1500
                 if is_tonal_language(chunks[i]) and len(chunks[i]) > tonal_max:
                     remaining_text = ' '.join(chunks[i:])
                     new_chunks = smart_split(remaining_text, tonal_max)
@@ -1477,7 +1480,7 @@ def convert():
         # V2/Turbo/Flash Latin are fast → keep 4500
         is_v3_model = model_id and 'v3' in model_id.lower()
         if is_tonal_language(text):
-            chunk_size = 2500
+            chunk_size = 1500
         elif is_v3_model:
             chunk_size = 3000
         else:
