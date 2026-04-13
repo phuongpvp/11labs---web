@@ -11,12 +11,6 @@
 
 require_once __DIR__ . '/config.php';
 
-// Auth
-if (!isset($_GET['secret']) || !verifyWorkerSecret($_GET['secret'])) {
-    http_response_code(403);
-    die("Access Denied");
-}
-
 header('Content-Type: text/html; charset=utf-8');
 echo "<pre style='font-family:monospace; background:#111; color:#0f0; padding:20px; font-size:14px;'>";
 echo "🧪 TEST V3 VOICE CONSISTENCY\n";
