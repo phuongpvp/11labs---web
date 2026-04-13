@@ -513,28 +513,33 @@ def is_tonal_language(text):
     Non-Latin (heavy): Korean, Japanese, Chinese, Vietnamese, Arabic, Hindi, Russian,
                         Thai, Greek, Hebrew, Bengali, and ALL other non-Latin scripts.
 
-    Vietnamese uses Latin script BUT its extended chars (ắ,ằ,ẩ,ế,ệ,ố...) fall in
-    Unicode 0x1E00+ (outside our Latin range 0x0000-0x024F), so it's correctly detected as heavy."""
+    Vietnamese special case: mostly Latin script (à,á,â,ô,ơ,ư are ≤ 0x024F) but has
+    double-accented chars (ắ,ằ,ẩ,ế,ệ,ố,ừ,ự...) in 0x1E00-0x1EFF range.
+    Even a small presence of these chars means Vietnamese → treat as heavy."""
     if not text:
         return False
     # Sample first 500 chars for performance
     sample = text[:500]
     latin_count = 0
     total_alpha = 0
+    vietnamese_ext_count = 0
     for ch in sample:
         if ch.isalpha():
             total_alpha += 1
             cp = ord(ch)
+            # Vietnamese Extended Additional block: U+1E00 to U+1EFF
+            # Contains: ả,ạ,ắ,ằ,ẳ,ẵ,ặ,ấ,ầ,ẩ,ẫ,ậ,ế,ề,ể,ễ,ệ,ỉ,ị,ố,ồ,ổ,ỗ,ộ,ớ,ờ,ở,ỡ,ợ,ụ,ứ,ừ,ử,ữ,ự,ỳ,ỷ,ỹ,ỵ,ẻ,ẽ,ẹ...
+            if 0x1E00 <= cp <= 0x1EFF:
+                vietnamese_ext_count += 1
             # Basic Latin (A-Z, a-z) + Latin Extended-A + Latin Extended-B
-            # Covers: English, French, Spanish, German, Italian, Portuguese,
-            #         Polish, Czech, Romanian, Turkish, Hungarian, etc.
-            # Does NOT cover: Vietnamese Extended Additional (0x1E00+),
-            #                 Cyrillic, Greek, Arabic, CJK, Hangul, Thai, etc.
             if cp <= 0x024F:
                 latin_count += 1
     if total_alpha == 0:
         return False
-    # If less than 85% of alphabetic chars are basic Latin → heavy language
+    # Vietnamese detection: if even 3%+ of chars are Vietnamese extended → it's Vietnamese
+    if vietnamese_ext_count > 0 and (vietnamese_ext_count / total_alpha) >= 0.03:
+        return True
+    # General non-Latin: if less than 85% basic Latin → heavy language (CJK, Arabic, Cyrillic, etc.)
     return (latin_count / total_alpha) < 0.85
 
 def strip_audio_tags(text):
