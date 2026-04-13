@@ -90,7 +90,7 @@ def login_with_firebase(email, password):
         print(f"⚠️ Firebase login exception for {email}: {e}")
     return None
 
-def call_api_tts(text, voice_id, api_key, model_id, previous_text=None, voice_settings=None):
+def call_api_tts(text, voice_id, api_key, model_id, previous_text=None, voice_settings=None, seed=None):
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/with-timestamps"
     headers = {"Content-Type": "application/json", "Accept": "*/*"}
     if api_key.startswith("ey") or len(api_key) > 100:
@@ -98,7 +98,10 @@ def call_api_tts(text, voice_id, api_key, model_id, previous_text=None, voice_se
     else:
         headers["xi-api-key"] = api_key
 
-    settings = {"stability": 0.5, "similarity_boost": 0.75}
+    # V3 models benefit from higher stability to prevent accent drift
+    is_v3 = model_id and 'v3' in model_id.lower()
+    default_stability = 0.65 if is_v3 else 0.5
+    settings = {"stability": default_stability, "similarity_boost": 0.75}
     if voice_settings and isinstance(voice_settings, dict):
         if 'stability' in voice_settings: settings['stability'] = voice_settings['stability']
         if 'similarity' in voice_settings: settings['similarity_boost'] = voice_settings['similarity']
@@ -106,6 +109,8 @@ def call_api_tts(text, voice_id, api_key, model_id, previous_text=None, voice_se
 
     payload = {"text": text, "model_id": model_id, "voice_settings": settings}
     if previous_text: payload["previous_text"] = previous_text
+    # Seed keeps voice identity consistent across chunks within the same job
+    if seed is not None: payload["seed"] = seed
 
     # Timeout 150s cho tất cả — ElevenLabs có thể chậm bất kể ngôn ngữ
     api_timeout = 150
@@ -815,6 +820,8 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
         _last_logged_key_idx = -1  # Track which key was last logged to avoid spam
         previous_chunk_text = previous_chunk_context or ""  # Context overlap for seamless voice (like tool exe)
         v2_last_checked_key = -1  # V2 Dynamic: track which key was last credit-checked
+        # V3 Voice Consistency: fixed seed per job prevents accent/style drift across chunks
+        job_seed = int(hashlib.md5(job_id.encode()).hexdigest()[:8], 16) % 4294967295 if job_id else None
         partial_audio_base = None  # Pre-existing audio from a previous worker (resume)
         total_processed_chars = resume_from_chars  # Track chars processed across workers
 
@@ -980,18 +987,19 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
                     smart_overlap = get_last_words(previous_chunk_text)
 
                     if smart_overlap and len(smart_overlap) > 5:
-                        log_to_backend(f"V3 Overlap Fix chunk {i+1}/{len(chunks)} ({len(smart_overlap)} chars overlap)", job_id=job_id)
+                        log_to_backend(f"V3 Overlap Fix chunk {i+1}/{len(chunks)} ({len(smart_overlap)} chars overlap) seed={job_seed}", job_id=job_id)
 
                         # Step 1: Generate overlap audio to measure its duration
-                        overlap_data = call_api_tts(smart_overlap, voice_id, api_key, model_id, voice_settings=voice_settings)
+                        overlap_data = call_api_tts(smart_overlap, voice_id, api_key, model_id, voice_settings=voice_settings, seed=job_seed)
                         if not isinstance(overlap_data, dict) or "audio_base64" not in overlap_data:
                             raise Exception(f"Overlap TTS failed: {str(overlap_data)[:100]}")
                         overlap_audio = AudioSegment.from_mp3(io.BytesIO(base64.b64decode(overlap_data["audio_base64"])))
                         overlap_duration_ms = len(overlap_audio)
 
                         # Step 2: Generate combined audio (overlap + current chunk)
+                        # Also pass previous_text for V3 context (helps maintain accent consistency)
                         combined_text = f"{smart_overlap} {chunks[i]}"
-                        combined_data = call_api_tts(combined_text, voice_id, api_key, model_id, voice_settings=voice_settings)
+                        combined_data = call_api_tts(combined_text, voice_id, api_key, model_id, previous_text=previous_chunk_text, voice_settings=voice_settings, seed=job_seed)
                         if not isinstance(combined_data, dict) or "audio_base64" not in combined_data:
                             raise Exception(f"Combined TTS failed: {str(combined_data)[:100]}")
                         combined_audio = AudioSegment.from_mp3(io.BytesIO(base64.b64decode(combined_data["audio_base64"])))
@@ -1042,8 +1050,8 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
                                     alignment['character_end_times_seconds'] = a_ends[overlap_char_count:]
                             logger.warning(f"V3 Overlap trim point ({trim_point_ms}ms) >= audio length ({len(combined_audio)}ms), using full audio")
                     else:
-                        # Overlap text too short, generate normally
-                        res_data = call_api_tts(chunks[i], voice_id, api_key, model_id, voice_settings=voice_settings)
+                        # Overlap text too short, generate normally (still use seed + previous_text)
+                        res_data = call_api_tts(chunks[i], voice_id, api_key, model_id, previous_text=previous_chunk_text if is_v3 else None, voice_settings=voice_settings, seed=job_seed if is_v3 else None)
                         if not isinstance(res_data, dict) or "audio_base64" not in res_data:
                             raise Exception(f"API error: {str(res_data)[:100]}")
                         seg = AudioSegment.from_mp3(io.BytesIO(base64.b64decode(res_data["audio_base64"])))
@@ -1051,11 +1059,11 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
                 else:
                     # ===== STANDARD GENERATION =====
                     # Covers: non-V3 models, V3 first chunk (no previous text yet)
-                    # Non-V3 models use previous_text param for voice continuity
-                    prev_ctx = None
-                    if previous_chunk_text and model_id and not is_v3:
-                        prev_ctx = previous_chunk_text
-                    res_data = call_api_tts(chunks[i], voice_id, api_key, model_id, previous_text=prev_ctx, voice_settings=voice_settings)
+                    # V3: use seed for voice consistency + previous_text for context
+                    # Non-V3: use previous_text param for voice continuity (no seed needed, has request stitching)
+                    prev_ctx = previous_chunk_text if previous_chunk_text and model_id else None
+                    v3_seed = job_seed if is_v3 else None
+                    res_data = call_api_tts(chunks[i], voice_id, api_key, model_id, previous_text=prev_ctx, voice_settings=voice_settings, seed=v3_seed)
 
                     if not isinstance(res_data, dict):
                         raise Exception(f"API returned {type(res_data)} instead of dict: {str(res_data)[:100]}")
