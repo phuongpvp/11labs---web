@@ -98,10 +98,7 @@ def call_api_tts(text, voice_id, api_key, model_id, previous_text=None, voice_se
     else:
         headers["xi-api-key"] = api_key
 
-    # V3 models benefit from higher stability to prevent accent drift
-    is_v3 = model_id and 'v3' in model_id.lower()
-    default_stability = 0.65 if is_v3 else 0.5
-    settings = {"stability": default_stability, "similarity_boost": 0.75}
+    settings = {"stability": 0.5, "similarity_boost": 0.75}
     if voice_settings and isinstance(voice_settings, dict):
         if 'stability' in voice_settings: settings['stability'] = voice_settings['stability']
         if 'similarity' in voice_settings: settings['similarity_boost'] = voice_settings['similarity']
@@ -109,7 +106,6 @@ def call_api_tts(text, voice_id, api_key, model_id, previous_text=None, voice_se
 
     payload = {"text": text, "model_id": model_id, "voice_settings": settings}
     if previous_text: payload["previous_text"] = previous_text
-
 
     # Timeout 150s cho tất cả — ElevenLabs có thể chậm bất kể ngôn ngữ
     api_timeout = 150
@@ -506,19 +502,15 @@ def get_last_words(text, word_count=15):
 
 def is_tonal_language(text):
     """Detect if text is a non-Latin language that requires smaller chunks on ElevenLabs.
-    Instead of whitelisting specific scripts (and missing some like Korean was),
-    we flip the logic: if text is primarily Latin → fast, otherwise → heavy (cap 1500).
-
     Latin-based (fast): English, French, Spanish, German, Italian, Portuguese, Polish, etc.
     Non-Latin (heavy): Korean, Japanese, Chinese, Vietnamese, Arabic, Hindi, Russian,
                         Thai, Greek, Hebrew, Bengali, and ALL other non-Latin scripts.
 
     Vietnamese special case: mostly Latin script (à,á,â,ô,ơ,ư are ≤ 0x024F) but has
     double-accented chars (ắ,ằ,ẩ,ế,ệ,ố,ừ,ự...) in 0x1E00-0x1EFF range.
-    Even a small presence of these chars means Vietnamese → treat as heavy."""
+    Even 3%+ of these chars → Vietnamese → treat as heavy."""
     if not text:
         return False
-    # Sample first 500 chars for performance
     sample = text[:500]
     latin_count = 0
     total_alpha = 0
@@ -527,19 +519,18 @@ def is_tonal_language(text):
         if ch.isalpha():
             total_alpha += 1
             cp = ord(ch)
-            # Vietnamese Extended Additional block: U+1E00 to U+1EFF
-            # Contains: ả,ạ,ắ,ằ,ẳ,ẵ,ặ,ấ,ầ,ẩ,ẫ,ậ,ế,ề,ể,ễ,ệ,ỉ,ị,ố,ồ,ổ,ỗ,ộ,ớ,ờ,ở,ỡ,ợ,ụ,ứ,ừ,ử,ữ,ự,ỳ,ỷ,ỹ,ỵ,ẻ,ẽ,ẹ...
+            # Vietnamese Extended Additional: U+1E00 to U+1EFF
             if 0x1E00 <= cp <= 0x1EFF:
                 vietnamese_ext_count += 1
-            # Basic Latin (A-Z, a-z) + Latin Extended-A + Latin Extended-B
+            # Basic Latin + Latin Extended-A + Latin Extended-B
             if cp <= 0x024F:
                 latin_count += 1
     if total_alpha == 0:
         return False
-    # Vietnamese detection: if even 3%+ of chars are Vietnamese extended → it's Vietnamese
+    # Vietnamese: 3%+ chars in 0x1E00-0x1EFF → heavy
     if vietnamese_ext_count > 0 and (vietnamese_ext_count / total_alpha) >= 0.03:
         return True
-    # General non-Latin: if less than 85% basic Latin → heavy language (CJK, Arabic, Cyrillic, etc.)
+    # General non-Latin (CJK, Arabic, Cyrillic...): <85% basic Latin → heavy
     return (latin_count / total_alpha) < 0.85
 
 def strip_audio_tags(text):
@@ -824,7 +815,6 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
         _last_logged_key_idx = -1  # Track which key was last logged to avoid spam
         previous_chunk_text = previous_chunk_context or ""  # Context overlap for seamless voice (like tool exe)
         v2_last_checked_key = -1  # V2 Dynamic: track which key was last credit-checked
-
         partial_audio_base = None  # Pre-existing audio from a previous worker (resume)
         total_processed_chars = resume_from_chars  # Track chars processed across workers
 
@@ -935,8 +925,8 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
                 log_to_backend(f"▶️ Bắt đầu Chunk {i+1}/{len(chunks)} ({len(chunks[i])} chars ~ cần {len(chunks[i])} điểm) - Key #{cur_key_id}", job_id=job_id)
 
                 # Non-Latin languages are heavier on ElevenLabs
-                # JP/KR/CN/VI/AR etc. → cap at 1500 for all models to avoid timeout
-                tonal_max = 1500
+                # JP/KR/CN/VI/AR etc. → cap at 2000 for all models to avoid timeout
+                tonal_max = 2000
                 if is_tonal_language(chunks[i]) and len(chunks[i]) > tonal_max:
                     remaining_text = ' '.join(chunks[i:])
                     new_chunks = smart_split(remaining_text, tonal_max)
@@ -1000,9 +990,8 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
                         overlap_duration_ms = len(overlap_audio)
 
                         # Step 2: Generate combined audio (overlap + current chunk)
-                        # Also pass previous_text for V3 context (helps maintain accent consistency)
                         combined_text = f"{smart_overlap} {chunks[i]}"
-                        combined_data = call_api_tts(combined_text, voice_id, api_key, model_id, previous_text=previous_chunk_text, voice_settings=voice_settings)
+                        combined_data = call_api_tts(combined_text, voice_id, api_key, model_id, voice_settings=voice_settings)
                         if not isinstance(combined_data, dict) or "audio_base64" not in combined_data:
                             raise Exception(f"Combined TTS failed: {str(combined_data)[:100]}")
                         combined_audio = AudioSegment.from_mp3(io.BytesIO(base64.b64decode(combined_data["audio_base64"])))
@@ -1053,8 +1042,8 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
                                     alignment['character_end_times_seconds'] = a_ends[overlap_char_count:]
                             logger.warning(f"V3 Overlap trim point ({trim_point_ms}ms) >= audio length ({len(combined_audio)}ms), using full audio")
                     else:
-                        # Overlap text too short, generate normally (still use seed + previous_text)
-                        res_data = call_api_tts(chunks[i], voice_id, api_key, model_id, previous_text=previous_chunk_text if is_v3 else None, voice_settings=voice_settings)
+                        # Overlap text too short, generate normally
+                        res_data = call_api_tts(chunks[i], voice_id, api_key, model_id, voice_settings=voice_settings)
                         if not isinstance(res_data, dict) or "audio_base64" not in res_data:
                             raise Exception(f"API error: {str(res_data)[:100]}")
                         seg = AudioSegment.from_mp3(io.BytesIO(base64.b64decode(res_data["audio_base64"])))
@@ -1062,9 +1051,10 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
                 else:
                     # ===== STANDARD GENERATION =====
                     # Covers: non-V3 models, V3 first chunk (no previous text yet)
-                    # V3: use seed for voice consistency + previous_text for context
-                    # Non-V3: use previous_text param for voice continuity (no seed needed, has request stitching)
-                    prev_ctx = previous_chunk_text if previous_chunk_text and model_id else None
+                    # Non-V3 models use previous_text param for voice continuity
+                    prev_ctx = None
+                    if previous_chunk_text and model_id and not is_v3:
+                        prev_ctx = previous_chunk_text
                     res_data = call_api_tts(chunks[i], voice_id, api_key, model_id, previous_text=prev_ctx, voice_settings=voice_settings)
 
                     if not isinstance(res_data, dict):
@@ -1485,12 +1475,12 @@ def convert():
 
         # Dynamic chunk size based on model + language
         # Non-Latin languages (Korean, Japanese, Chinese, Vietnamese, Arabic, Hindi, Russian...)
-        # are heavier on ElevenLabs → cap at 1500 to avoid timeout
+        # are heavier on ElevenLabs → cap at 2000 to avoid timeout
         # V3 Latin uses 3000 (smaller than V2 due to overlap technique doubling API calls)
         # V2/Turbo/Flash Latin are fast → keep 4500
         is_v3_model = model_id and 'v3' in model_id.lower()
         if is_tonal_language(text):
-            chunk_size = 1500
+            chunk_size = 2000
         elif is_v3_model:
             chunk_size = 3000
         else:
