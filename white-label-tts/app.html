@@ -2281,7 +2281,7 @@
                             await fetch(`${API}/proxy_tts.php`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ action: 'update_status', job_id: jobId, status: 'completed', result_file: audioUrl, result_srt: srtLocalUrl }) });
                         } catch (e) { console.warn('update_status failed:', e); }
                         const mp3Name = audioUrl.split('/').pop();
-                        const srtName = mp3Name.replace(/\.mp3$/i, '.srt');
+                        const srtName = srtLocalUrl ? srtLocalUrl.split('/').pop() : '';
                         content.innerHTML = `
                             <div class="audio-player-row">
                                 <button class="player-btn" onclick="togglePlay(this)"><i class="fa-solid fa-play"></i></button>
@@ -2392,7 +2392,7 @@
                         <div class="h-ptime" id="hTime${i}">0:00 / 0:00</div>
                         <div class="h-player-actions">
                             <a href="${h.result_file}" download="${h.result_file.split('/').pop()}" title="Tải MP3"><i class="fa-solid fa-download"></i></a>
-                            ${h.result_srt ? `<a href="${h.result_srt}" download="${h.result_file.split('/').pop().replace(/\\.mp3$/i, '.srt')}" title="Tải SRT"><i class="fa-solid fa-file-lines"></i></a>` : ''}
+                            ${h.result_srt ? `<a href="${h.result_srt}" download="${h.result_srt.split('/').pop()}" title="Tải SRT"><i class="fa-solid fa-file-lines"></i></a>` : ''}
                         </div>
                     </div>
                     <audio id="hAudio${i}" preload="none" src="${h.result_file}"
