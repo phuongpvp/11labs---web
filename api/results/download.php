@@ -15,8 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 $file = $_GET['file'] ?? '';
 
-// Security: only allow alphanumeric + underscore + dot, must end with .mp3
-if (!$file || !preg_match('/^[A-Za-z0-9_\-]+\.mp3$/', $file)) {
+// Security: only allow alphanumeric + underscore + dot, must end with .mp3 or .srt
+if (!$file || !preg_match('/^[A-Za-z0-9_\-]+\.(mp3|srt)$/', $file)) {
     http_response_code(400);
     echo 'Invalid file';
     exit;
@@ -30,7 +30,12 @@ if (!file_exists($filePath)) {
     exit;
 }
 
-header('Content-Type: audio/mpeg');
+$ext = pathinfo($file, PATHINFO_EXTENSION);
+if ($ext === 'srt') {
+    header('Content-Type: text/plain; charset=utf-8');
+} else {
+    header('Content-Type: audio/mpeg');
+}
 header('Content-Length: ' . filesize($filePath));
 header('Content-Disposition: attachment; filename="' . $file . '"');
 
