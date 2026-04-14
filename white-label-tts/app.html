@@ -2095,6 +2095,13 @@
             }
         }
 
+        // ─── FILENAME HELPER ───
+        function generateFilename(text, ext) {
+            if (!text) return `voiceai_${Date.now()}.${ext}`;
+            let name = text.substring(0, 15).trim().replace(/[\\/:*?"<>|]/g, '');
+            return name ? `${name}.${ext}` : `voiceai_${Date.now()}.${ext}`;
+        }
+
         // ─── TTS ───
         async function startTTS() {
             const text = document.getElementById('ttsText').value.trim();
@@ -2254,13 +2261,16 @@
                         try {
                             await fetch(`${API}/proxy_tts.php`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ action: 'update_status', job_id: jobId, status: 'completed', result_file: audioUrl }) });
                         } catch (e) { console.warn('update_status failed:', e); }
+                        const ttsText = document.getElementById('ttsText').value.trim();
+                        const mp3Name = generateFilename(ttsText, 'mp3');
+                        const srtName = generateFilename(ttsText, 'srt');
                         content.innerHTML = `
                             <div class="audio-player-row">
                                 <button class="player-btn" onclick="togglePlay(this)"><i class="fa-solid fa-play"></i></button>
                                 <input type="range" class="player-slider" id="resultSeek" value="0" min="0" step="0.1">
                                 <div class="player-time" id="resultTime">0:00 / 0:00</div>
-                                <a href="${audioUrl}" download class="btn btn-sm btn-success" title="Tải MP3"><i class="fa-solid fa-download"></i></a>
-                                ${data.srt_url ? `<a href="${EXT_API.replace('/external/v1', '/results/download.php')}?file=${jobId}.srt" download class="btn btn-sm btn-outline" title="Tải SRT" style="margin-left:4px;"><i class="fa-solid fa-file-lines"></i></a>` : ''}
+                                <a href="${audioUrl}" download="${mp3Name}" class="btn btn-sm btn-success" title="Tải MP3"><i class="fa-solid fa-download"></i></a>
+                                ${data.srt_url ? `<a href="${EXT_API.replace('/external/v1', '/results/download.php')}?file=${jobId}.srt" download="${srtName}" class="btn btn-sm btn-outline" title="Tải SRT" style="margin-left:4px;"><i class="fa-solid fa-file-lines"></i></a>` : ''}
                             </div>
                             <audio id="resultAudio" preload="auto" src="${audioUrl}"></audio>`;
                         setupResultPlayer();
@@ -2363,8 +2373,8 @@
                         <input type="range" value="0" min="0" step="0.1" id="hSeek${i}">
                         <div class="h-ptime" id="hTime${i}">0:00 / 0:00</div>
                         <div class="h-player-actions">
-                            <a href="${h.result_file}" download title="Tải MP3"><i class="fa-solid fa-download"></i></a>
-                            <a href="${EXT_API.replace('/external/v1', '/results/download.php')}?file=${h.job_id || h.id}.srt" download title="Tải SRT"><i class="fa-solid fa-file-lines"></i></a>
+                            <a href="${h.result_file}" download="${generateFilename(h.text_preview, 'mp3')}" title="Tải MP3"><i class="fa-solid fa-download"></i></a>
+                            <a href="${EXT_API.replace('/external/v1', '/results/download.php')}?file=${h.job_id || h.id}.srt" download="${generateFilename(h.text_preview, 'srt')}" title="Tải SRT"><i class="fa-solid fa-file-lines"></i></a>
                         </div>
                     </div>
                     <audio id="hAudio${i}" preload="none" src="${h.result_file}"
