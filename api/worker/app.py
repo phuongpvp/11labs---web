@@ -533,6 +533,21 @@ def is_tonal_language(text):
     # General non-Latin (CJK, Arabic, Cyrillic...): <85% basic Latin → heavy
     return (latin_count / total_alpha) < 0.85
 
+def is_vietnamese(text):
+    """Check if text is Vietnamese (has chars in 0x1E00-0x1EFF range)."""
+    if not text:
+        return False
+    sample = text[:500]
+    total_alpha = 0
+    viet_count = 0
+    for ch in sample:
+        if ch.isalpha():
+            total_alpha += 1
+            cp = ord(ch)
+            if 0x1E00 <= cp <= 0x1EFF:
+                viet_count += 1
+    return total_alpha > 0 and (viet_count / total_alpha) >= 0.03
+
 def strip_audio_tags(text):
     """Remove audio/emotion tags like [pause], [laughs], [whispers], [excited] etc. from text for clean SRT output"""
     cleaned = re.sub(r'\[(?:pause|short pause|long pause|dramatic pause|laughs|whispers|sighs|coughs|happy|sad|angry|excited|calm|slowly|fast|soft|loud|breath|gasp|clears throat)[^\]]*\]', '', text, flags=re.IGNORECASE)
@@ -1474,15 +1489,13 @@ def convert():
             return jsonify({'error': 'No valid accounts'}), 401
 
         # Dynamic chunk size based on model + language
-        # V3 non-Latin: 2000 (balance giữa timeout và voice drift)
-        # V3 Latin: 3000 (overlap technique doubles API calls)
-        # V2/Turbo/Flash non-Latin: 1500 (tránh timeout, V2 không bị drift nhờ request stitching)
-        # V2/Turbo/Flash Latin: 4500 (fast)
+        # V3 Việt: 3000 (Latin-based, xử lý nhanh hơn CJK)
+        # V3 Nhật/Hàn/Trung/Ả Rập: 2000 (non-Latin nặng, dễ timeout)
+        # V3 Latin (Anh, Pháp...): 3000
+        # V2/Turbo/Flash: luôn 4500
         is_v3_model = model_id and 'v3' in model_id.lower()
-        if is_v3_model and is_tonal_language(text):
+        if is_v3_model and is_tonal_language(text) and not is_vietnamese(text):
             chunk_size = 2000
-        elif is_tonal_language(text):
-            chunk_size = 1500
         elif is_v3_model:
             chunk_size = 3000
         else:
