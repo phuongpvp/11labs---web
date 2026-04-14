@@ -69,7 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'model_id' => $modelId,
         'job_type' => 'tts',
         'job_id' => $jobId,
-        'voice_settings' => null,
+        'voice_settings' => [
+            'stability' => isset($input['stability']) ? floatval($input['stability']) / 100 : 0.5
+        ],
         'php_backend' => PHP_BACKEND_URL,
     ];
     
@@ -225,6 +227,11 @@ textarea { min-height: 120px; resize: vertical; }
         </div>
     </div>
     <div class="form-row">
+        <label>ĐỘ ỔN ĐỊNH <span id="stabilityValue" style="float:right;color:#aa88ff;font-weight:600;">50%</span></label>
+        <input type="range" id="stability" min="0" max="100" value="50" style="accent-color:#aa88ff;cursor:pointer;" oninput="document.getElementById('stabilityValue').textContent=this.value+'%'">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#666;margin-top:2px;"><span>Mạnh mẽ</span><span>Ổn định hơn</span></div>
+    </div>
+    <div class="form-row">
         <label>Nội dung test (tiếng Việt dài để chia nhiều chunk)</label>
         <textarea id="textContent">Xin chào tất cả các bạn, hôm nay tôi rất vui được chia sẻ với các bạn về một chủ đề vô cùng thú vị, đó chính là công nghệ trí tuệ nhân tạo và những ứng dụng tuyệt vời của nó trong cuộc sống hàng ngày. Trí tuệ nhân tạo, hay còn gọi là AI, đang dần thay đổi mọi khía cạnh trong cuộc sống của chúng ta, từ cách chúng ta làm việc cho đến cách chúng ta giải trí và giao tiếp với nhau.
 
@@ -301,7 +308,8 @@ async function generate() {
                 worker_uuid: selectedWorkerUuid,
                 voice_id: document.getElementById('voiceId').value.trim(),
                 text: document.getElementById('textContent').value,
-                model_id: document.getElementById('modelId').value
+                model_id: document.getElementById('modelId').value,
+                stability: parseInt(document.getElementById('stability').value)
             })
         });
         const data = await resp.json();
