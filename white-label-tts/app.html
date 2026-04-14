@@ -1229,6 +1229,42 @@
         .promo-image-container img:hover {
             transform: scale(1.02);
         }
+        /* Upload Menu */
+        .upload-btn-container { position: relative; display: inline-block; }
+        .upload-menu {
+            position: absolute; bottom: 100%; left: 0;
+            background: #18181b; border: 1px solid var(--border); border-radius: 12px;
+            padding: 8px; min-width: 240px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: none; z-index: 1000; margin-bottom: 10px;
+        }
+        .upload-menu.show { display: block; animation: fadeIn 0.2s ease-out; }
+        .upload-menu-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 15px; color: var(--text); cursor: pointer;
+            border-radius: 8px; transition: 0.2s; font-size: 0.9rem;
+        }
+        .upload-menu-item:hover { background: rgba(255,255,255,0.05); }
+        .upload-menu-item i { width: 24px; font-size: 1.1rem; color: var(--text-muted); text-align: center; }
+
+        /* Batch Modal */
+        .batch-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+            z-index: 1000; align-items: center; justify-content: center; padding: 20px;
+        }
+        .batch-overlay.active { display: flex; }
+        .batch-box {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius); width: 100%; max-width: 650px; padding: 28px;
+        }
+        .batch-box h3 { margin: 0 0 20px; font-size: 1.05rem; display: flex; align-items: center; gap: 10px; }
+        .batch-table-wrap { max-height: 350px; overflow-y: auto; margin-bottom: 20px; border-radius: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); }
+        .batch-table { width: 100%; border-collapse: collapse; }
+        .batch-table th { position: sticky; top: 0; background: #27272a; text-align: left; font-size: 0.78rem; color: var(--text-muted); padding: 10px 14px; }
+        .batch-table td { padding: 10px 14px; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.03); color: white; }
+        .batch-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.05); gap: 16px; }
+        .batch-stats { display: flex; gap: 20px; font-size: 0.82rem; color: var(--text-muted); }
+        .batch-stats span { color: var(--primary); font-weight: 700; }
     </style>
 </head>
 
@@ -1281,6 +1317,23 @@
             <div class="bottom-bar">
                 <div class="bottom-left">
                     <span>Ký tự <span id="charCount" style="color:var(--primary);font-weight:700;">0</span></span>
+                    <div class="upload-btn-container">
+                        <button class="btn btn-outline btn-sm" onclick="toggleUploadMenu(event)" style="padding:6px 10px;">
+                            <i class="fa-solid fa-upload"></i>
+                        </button>
+                        <div id="uploadMenu" class="upload-menu">
+                            <div class="upload-menu-item" onclick="document.getElementById('batchFiles').click()">
+                                <i class="fa-solid fa-file-arrow-up"></i>
+                                <span>Tải lên tệp (.txt, .srt)</span>
+                            </div>
+                            <div class="upload-menu-item" onclick="document.getElementById('batchFolder').click()">
+                                <i class="fa-solid fa-folder-open"></i>
+                                <span>Tải lên thư mục</span>
+                            </div>
+                        </div>
+                        <input type="file" id="batchFiles" multiple accept=".txt,.srt" style="display:none;" onchange="handleMultipleFiles(this.files)">
+                        <input type="file" id="batchFolder" webkitdirectory mozdirectory style="display:none;" onchange="handleMultipleFiles(this.files)">
+                    </div>
                 </div>
                 <div style="display:flex;gap:10px;align-items:center;">
                     <button class="btn btn-outline btn-sm"
@@ -1290,6 +1343,31 @@
                     <button class="btn btn-primary" id="btnConvert" onclick="startTTS()">
                         <i class="fa-solid fa-wand-magic-sparkles"></i> Tạo giọng nói
                     </button>
+                </div>
+            </div>
+
+            <!-- Batch Modal -->
+            <div class="batch-overlay" id="batchModal">
+                <div class="batch-box">
+                    <h3><i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> Nhập hàng loạt
+                        <button onclick="closeBatchModal()" style="margin-left:auto;background:none;border:none;color:var(--text-muted);font-size:1.3rem;cursor:pointer;">&times;</button>
+                    </h3>
+                    <div class="batch-table-wrap">
+                        <table class="batch-table">
+                            <thead><tr><th>Tên tệp</th><th>Ký tự</th><th></th></tr></thead>
+                            <tbody id="batchTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="batch-footer">
+                        <div class="batch-stats">
+                            <div>Tổng: <span id="batchTotalFiles">0</span> tệp</div>
+                            <div>Ký tự: <span id="batchTotalChars">0</span></div>
+                        </div>
+                        <div style="display:flex;gap:10px;">
+                            <button class="btn btn-outline btn-sm" onclick="clearBatchQueue()"><i class="fa-solid fa-trash-can"></i> Xóa</button>
+                            <button class="btn btn-primary btn-sm" id="batchConvertBtn" onclick="processBatchQueue()"><i class="fa-solid fa-wand-magic-sparkles"></i> Tạo hàng loạt</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1612,6 +1690,7 @@
         const API = 'api';
         const token = localStorage.getItem('customer_token');
         let voices = [];
+        let batchQueue = [];
         let selectedVoiceId = '21m00Tcm4TlvDq8ikWAM';
         let favoriteVoices = [];
         let voiceTab = 'all';
@@ -1932,6 +2011,89 @@
                 } catch (e) { renderVoiceList([]); }
             }, 400);
         });
+
+        // ─── UPLOAD & BATCH ───
+        function toggleUploadMenu(e) {
+            e.stopPropagation();
+            if (batchQueue.length > 0) {
+                document.getElementById('batchModal').classList.add('active');
+            } else {
+                document.getElementById('uploadMenu').classList.toggle('show');
+            }
+        }
+        window.addEventListener('click', (e) => {
+            const m = document.getElementById('uploadMenu');
+            if (m && !m.contains(e.target)) m.classList.remove('show');
+        });
+
+        function closeBatchModal() { document.getElementById('batchModal').classList.remove('active'); }
+
+        async function handleMultipleFiles(files) {
+            if (!files || files.length === 0) return;
+            document.getElementById('uploadMenu').classList.remove('show');
+            for (const file of files) {
+                const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : '';
+                const isText = !ext || ext === 'txt' || ext === 'srt';
+                if (!isText) continue;
+                try {
+                    let text = await file.text();
+                    if (ext === 'srt') {
+                        text = text.replace(/^\d+\s*$/gm, '')
+                            .replace(/^\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}\s*$/gm, '')
+                            .replace(/^\s*[\r\n]/gm, '').trim();
+                    }
+                    if (text.trim()) {
+                        batchQueue.push({ name: file.name, text: text.trim(), chars: text.trim().length });
+                    }
+                } catch(e) { console.error('Read error:', file.name, e); }
+            }
+            document.getElementById('batchFiles').value = '';
+            document.getElementById('batchFolder').value = '';
+            updateBatchTable();
+            document.getElementById('batchModal').classList.add('active');
+        }
+
+        function updateBatchTable() {
+            const tbody = document.getElementById('batchTableBody');
+            let totalChars = 0;
+            tbody.innerHTML = batchQueue.map((item, i) => {
+                totalChars += item.chars;
+                return `<tr>
+                    <td><i class="fa-solid fa-file-lines" style="color:var(--primary);margin-right:8px;"></i>${item.name}</td>
+                    <td>${item.chars.toLocaleString('vi-VN')}</td>
+                    <td style="text-align:right;"><i class="fa-solid fa-trash" style="cursor:pointer;color:var(--text-muted);font-size:0.8rem;" onclick="removeBatchItem(${i})"></i></td>
+                </tr>`;
+            }).join('');
+            document.getElementById('batchTotalFiles').textContent = batchQueue.length;
+            document.getElementById('batchTotalChars').textContent = totalChars.toLocaleString('vi-VN');
+        }
+
+        function removeBatchItem(idx) {
+            batchQueue.splice(idx, 1);
+            updateBatchTable();
+            if (batchQueue.length === 0) closeBatchModal();
+        }
+
+        function clearBatchQueue() {
+            batchQueue = [];
+            updateBatchTable();
+            closeBatchModal();
+        }
+
+        async function processBatchQueue() {
+            if (batchQueue.length === 0) return;
+            closeBatchModal();
+            const queue = [...batchQueue];
+            batchQueue = [];
+
+            for (const item of queue) {
+                document.getElementById('ttsText').value = item.text;
+                document.getElementById('charCount').textContent = item.chars.toLocaleString('vi-VN');
+                await startTTS();
+                // Small delay between jobs
+                await new Promise(r => setTimeout(r, 1000));
+            }
+        }
 
         // ─── TTS ───
         async function startTTS() {
