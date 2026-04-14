@@ -74,14 +74,16 @@ if ($action === 'check_quota') {
     $jobId = $input['job_id'] ?? '';
     $status = $input['status'] ?? '';
     $resultFile = $input['result_file'] ?? '';
+    $resultSrt = $input['result_srt'] ?? '';
     $errorMessage = $input['error_message'] ?? '';
 
     if ($jobId && $status) {
         $db = getDB();
-        // Ensure error_message column exists
+        // Ensure columns exist
         try { $db->exec("ALTER TABLE tts_history ADD COLUMN error_message TEXT DEFAULT ''"); } catch (Exception $e) {}
-        $db->prepare("UPDATE tts_history SET status = ?, result_file = ?, error_message = ? WHERE job_id = ? AND customer_id = ?")
-            ->execute([$status, $resultFile, $errorMessage, $jobId, $customer['id']]);
+        try { $db->exec("ALTER TABLE tts_history ADD COLUMN result_srt TEXT DEFAULT ''"); } catch (Exception $e) {}
+        $db->prepare("UPDATE tts_history SET status = ?, result_file = ?, result_srt = ?, error_message = ? WHERE job_id = ? AND customer_id = ?")
+            ->execute([$status, $resultFile, $resultSrt, $errorMessage, $jobId, $customer['id']]);
     }
 
     jsonResponse(['status' => 'success']);

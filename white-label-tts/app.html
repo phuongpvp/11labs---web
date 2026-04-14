@@ -2229,8 +2229,9 @@
                         // Browser downloads audio via CORS proxy, then uploads to local host
                         content.innerHTML = `<div style="text-align:center;padding:12px;"><i class="fa-solid fa-spinner fa-spin" style="color:var(--primary);"></i> Đang lưu audio...</div>`;
                         let audioUrl = data.download_url;
+                        let srtLocalUrl = '';
                         try {
-                            // Use PHP proxy on main server to bypass CORS
+                            // Download MP3 via proxy
                             const mp3File = data.download_url.split('/').pop();
                             const proxyUrl = EXT_API.replace('/external/v1', '/results/download.php') + '?file=' + mp3File;
                             const audioRes = await fetch(proxyUrl);
@@ -2238,10 +2239,27 @@
                             const audioBlob = await audioRes.blob();
                             if (audioBlob.size < 1000) throw new Error('Audio file too small: ' + audioBlob.size + ' bytes');
 
-                            // Step 2: Upload blob to local PHP
+                            // Also download SRT via proxy
+                            let srtBlob = null;
+                            if (data.srt_url) {
+                                try {
+                                    const srtFile = data.srt_url.split('/').pop();
+                                    const srtProxyUrl = EXT_API.replace('/external/v1', '/results/download.php') + '?file=' + srtFile;
+                                    const srtRes = await fetch(srtProxyUrl);
+                                    if (srtRes.ok) {
+                                        srtBlob = await srtRes.blob();
+                                        if (srtBlob.size < 10) srtBlob = null; // too small = empty
+                                    }
+                                } catch(e) { console.warn('SRT download failed:', e); }
+                            }
+
+                            // Upload MP3 + SRT to local PHP
                             const formData = new FormData();
                             formData.append('audio', audioBlob, jobId + '.mp3');
                             formData.append('job_id', jobId);
+                            if (srtBlob) {
+                                formData.append('srt', srtBlob, jobId + '.srt');
+                            }
 
                             const saveRes = await fetch(`${API}/save_audio.php`, {
                                 method: 'POST',
@@ -2251,17 +2269,17 @@
                             const saveData = await saveRes.json();
                             if (saveData.status === 'success' && saveData.local_url) {
                                 audioUrl = saveData.local_url;
-                                console.log('Audio saved locally:', audioUrl);
+                                if (saveData.srt_local_url) srtLocalUrl = saveData.srt_local_url;
+                                console.log('Audio saved locally:', audioUrl, 'SRT:', srtLocalUrl);
                             }
                         } catch (e) {
                             console.warn('Local save failed, using remote URL:', e);
                         }
 
-                        // Always update local DB & show result (even if download failed)
+                        // Update local DB with both MP3 + SRT paths
                         try {
-                            await fetch(`${API}/proxy_tts.php`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ action: 'update_status', job_id: jobId, status: 'completed', result_file: audioUrl }) });
+                            await fetch(`${API}/proxy_tts.php`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ action: 'update_status', job_id: jobId, status: 'completed', result_file: audioUrl, result_srt: srtLocalUrl }) });
                         } catch (e) { console.warn('update_status failed:', e); }
-                        const ttsText = document.getElementById('ttsText').value.trim();
                         const mp3Name = audioUrl.split('/').pop();
                         const srtName = mp3Name.replace(/\.mp3$/i, '.srt');
                         content.innerHTML = `
@@ -2270,7 +2288,7 @@
                                 <input type="range" class="player-slider" id="resultSeek" value="0" min="0" step="0.1">
                                 <div class="player-time" id="resultTime">0:00 / 0:00</div>
                                 <a href="${audioUrl}" download="${mp3Name}" class="btn btn-sm btn-success" title="Tải MP3"><i class="fa-solid fa-download"></i></a>
-                                ${data.srt_url ? `<a href="${EXT_API.replace('/external/v1', '/results/download.php')}?file=${jobId}.srt" download="${srtName}" class="btn btn-sm btn-outline" title="Tải SRT" style="margin-left:4px;"><i class="fa-solid fa-file-lines"></i></a>` : ''}
+                                ${srtLocalUrl ? `<a href="${srtLocalUrl}" download="${srtName}" class="btn btn-sm btn-outline" title="Tải SRT" style="margin-left:4px;"><i class="fa-solid fa-file-lines"></i></a>` : ''}
                             </div>
                             <audio id="resultAudio" preload="auto" src="${audioUrl}"></audio>`;
                         setupResultPlayer();
@@ -2374,7 +2392,7 @@
                         <div class="h-ptime" id="hTime${i}">0:00 / 0:00</div>
                         <div class="h-player-actions">
                             <a href="${h.result_file}" download="${h.result_file.split('/').pop()}" title="Tải MP3"><i class="fa-solid fa-download"></i></a>
-                            <a href="${EXT_API.replace('/external/v1', '/results/download.php')}?file=${h.job_id || h.id}.srt" download="${h.result_file.split('/').pop().replace(/\.mp3$/i, '.srt')}" title="Tải SRT"><i class="fa-solid fa-file-lines"></i></a>
+                            ${h.result_srt ? `<a href="${h.result_srt}" download="${h.result_file.split('/').pop().replace(/\\.mp3$/i, '.srt')}" title="Tải SRT"><i class="fa-solid fa-file-lines"></i></a>` : ''}
                         </div>
                     </div>
                     <audio id="hAudio${i}" preload="none" src="${h.result_file}"

@@ -50,12 +50,23 @@ if (isset($_FILES['audio'])) {
     $filePath = $audioDir . '/' . $filename;
 
     if (move_uploaded_file($file['tmp_name'], $filePath)) {
-        jsonResponse([
+        $response = [
             'status' => 'success',
             'local_url' => 'audio/' . $filename,
             'size' => filesize($filePath),
             'filename' => $filename
-        ]);
+        ];
+
+        // Also save SRT if provided
+        if (isset($_FILES['srt']) && $_FILES['srt']['error'] === UPLOAD_ERR_OK) {
+            $srtFilename = str_replace('.mp3', '.srt', $filename);
+            $srtPath = $audioDir . '/' . $srtFilename;
+            if (move_uploaded_file($_FILES['srt']['tmp_name'], $srtPath)) {
+                $response['srt_local_url'] = 'audio/' . $srtFilename;
+            }
+        }
+
+        jsonResponse($response);
     } else {
         jsonResponse(['error' => 'Failed to save file'], 500);
     }

@@ -52,9 +52,9 @@ if (!file_exists($lockFile) || (time() - filemtime($lockFile)) > 600) {
 // Filter by type: tts (default) or conversation
 $type = $_GET['type'] ?? 'tts';
 if ($type === 'conversation') {
-    $stmt = $db->prepare("SELECT job_id, text_preview, characters_used, voice_id, model_id, status, result_file, error_message, created_at FROM tts_history WHERE customer_id = ? AND voice_id = 'conversation' ORDER BY created_at DESC LIMIT 50");
+    $stmt = $db->prepare("SELECT job_id, text_preview, characters_used, voice_id, model_id, status, result_file, result_srt, error_message, created_at FROM tts_history WHERE customer_id = ? AND voice_id = 'conversation' ORDER BY created_at DESC LIMIT 50");
 } else {
-    $stmt = $db->prepare("SELECT job_id, text_preview, characters_used, voice_id, model_id, status, result_file, error_message, created_at FROM tts_history WHERE customer_id = ? AND (voice_id != 'conversation' OR voice_id IS NULL) ORDER BY created_at DESC LIMIT 50");
+    $stmt = $db->prepare("SELECT job_id, text_preview, characters_used, voice_id, model_id, status, result_file, result_srt, error_message, created_at FROM tts_history WHERE customer_id = ? AND (voice_id != 'conversation' OR voice_id IS NULL) ORDER BY created_at DESC LIMIT 50");
 }
 $stmt->execute([$customer['id']]);
 $history = $stmt->fetchAll();
