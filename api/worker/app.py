@@ -940,8 +940,9 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
                 log_to_backend(f"▶️ Bắt đầu Chunk {i+1}/{len(chunks)} ({len(chunks[i])} chars ~ cần {len(chunks[i])} điểm) - Key #{cur_key_id}", job_id=job_id)
 
                 # Non-Latin languages are heavier on ElevenLabs
-                # JP/KR/CN/VI/AR etc. → cap at 2000 for all models to avoid timeout
-                tonal_max = 2000
+                # V3 Vietnamese: 3000 (Latin-based, nhanh hơn CJK)
+                # CJK/Arabic etc: 2000
+                tonal_max = 3000 if (is_v3 and is_vietnamese(chunks[i])) else 2000
                 if is_tonal_language(chunks[i]) and len(chunks[i]) > tonal_max:
                     remaining_text = ' '.join(chunks[i:])
                     new_chunks = smart_split(remaining_text, tonal_max)
