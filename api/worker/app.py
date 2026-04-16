@@ -533,6 +533,28 @@ def is_tonal_language(text):
     # General non-Latin (CJK, Arabic, Cyrillic...): <85% basic Latin → heavy
     return (latin_count / total_alpha) < 0.85
 
+def is_cjk_language(text):
+    """Detect if text is CJK (Chinese/Japanese/Korean).
+    CJK languages are the heaviest on ElevenLabs and need smaller chunks."""
+    if not text:
+        return False
+    sample = text[:500]
+    cjk_count = 0
+    total_alpha = 0
+    for ch in sample:
+        if ch.isalpha():
+            total_alpha += 1
+            cp = ord(ch)
+            # CJK Unified Ideographs, Hiragana, Katakana, Hangul
+            if (0x4E00 <= cp <= 0x9FFF or   # CJK chữ Hán (Trung/Nhật)
+                0x3040 <= cp <= 0x309F or   # Hiragana (Nhật)
+                0x30A0 <= cp <= 0x30FF or   # Katakana (Nhật)
+                0xAC00 <= cp <= 0xD7AF):    # Hangul (Hàn)
+                cjk_count += 1
+    if total_alpha == 0:
+        return False
+    return (cjk_count / total_alpha) >= 0.15
+
 def is_vietnamese(text):
     """Check if text is Vietnamese (has chars in 0x1E00-0x1EFF range)."""
     if not text:
@@ -852,11 +874,20 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
                 total_processed_chars = 0
 
         def report_progress(processed, status="processing", total=None):
-            if not job_id or not php_backend: return
+            if not job_id or not php_backend: return False
             payload = {'action': 'update', 'job_id': job_id, 'processed_chunks': processed, 'status': status, 'worker_uuid': WORKER_UUID}
             if total: payload['total_chunks'] = total
-            try: requests.post(f"{php_backend}/api/progress.php", json=payload, timeout=10, verify=False)
+            try:
+                resp = requests.post(f"{php_backend}/api/progress.php", json=payload, timeout=10, verify=False)
+                if resp.status_code == 404:
+                    try:
+                        data = resp.json()
+                        if data.get('cancel'):
+                            log_to_backend(f"🛑 Job {job_id} đã bị hủy/xóa. Dừng xử lý.", job_id=job_id, level='warning')
+                            return True  # Signal to cancel
+                    except: pass
             except: pass
+            return False
 
         # V17.10: Show model name in log for admin visibility
         model_short = model_id.replace('eleven_', '').replace('multilingual_', 'v').replace('turbo_', 'Turbo ').replace('flash_', 'Flash ') if model_id else 'N/A'
@@ -942,7 +973,12 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
                 # Non-Latin languages are heavier on ElevenLabs
                 # V3 Vietnamese: 3000 (Latin-based, nhanh hơn CJK)
                 # CJK/Arabic etc: 2000
-                tonal_max = 3000 if (is_v3 and is_vietnamese(chunks[i])) else 2000
+                if is_v3 and is_vietnamese(chunks[i]):
+                    tonal_max = 3000      # V3 Việt: Latin-based, xử lý nhanh
+                elif is_cjk_language(chunks[i]):
+                    tonal_max = 1600      # CJK (Nhật/Hàn/Trung): nặng nhất, dễ timeout
+                else:
+                    tonal_max = 2000      # Non-Latin khác (Arabic, Cyrillic...)
                 if is_tonal_language(chunks[i]) and len(chunks[i]) > tonal_max:
                     remaining_text = ' '.join(chunks[i:])
                     new_chunks = smart_split(remaining_text, tonal_max)
@@ -1089,7 +1125,9 @@ def process_job(job_id, text, valid_accounts, voice_id, model_id, php_backend, c
                 cumulative_duration += (len(seg) / 1000.0)
                 audio_segments.append(seg)
                 log_to_backend(f"Hoàn thành chunk {i+1}/{len(chunks)}", job_id=job_id)
-                report_progress(i + 1)
+                cancelled = report_progress(i + 1)
+                if cancelled:
+                    return  # Job đã bị hủy, dừng ngay
                 
                 # V17.16: Sync credits after each chunk (async, non-blocking)
                 def _sync_chunk_credits(key, key_id, backend):

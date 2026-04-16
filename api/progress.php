@@ -313,7 +313,7 @@ if ($method === 'POST') {
             $job = $stmt->fetch();
 
             if (!$job)
-                jsonResponse(['error' => 'Job not found'], 404);
+                jsonResponse(['error' => 'Job not found', 'cancel' => true], 404);
 
             // Log Success to completed_jobs.log
             if ($status === 'completed' && $job['old_status'] !== 'completed') {
