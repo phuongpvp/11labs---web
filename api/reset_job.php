@@ -292,6 +292,47 @@ try {
             color: #64748b;
             font-size: 12px;
         }
+        .manual-reset-box {
+            background: #111827;
+            border: 1px solid #2563eb;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+        }
+        .manual-reset-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #93c5fd;
+            margin-bottom: 10px;
+        }
+        .manual-reset-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .manual-reset-form input[type="text"] {
+            flex: 1;
+            max-width: 360px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background: #0a0e17;
+            color: #e0e6ed;
+            font-size: 14px;
+            font-family: 'Consolas', monospace;
+            letter-spacing: 0.5px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .manual-reset-form input[type="text"]:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37,99,235,0.25);
+        }
+        .manual-reset-form input[type="text"]::placeholder {
+            color: #475569;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            letter-spacing: 0;
+        }
     </style>
 </head>
 <body>
@@ -308,6 +349,15 @@ try {
                 <?php endif; ?>
             </div>
         </div>
+    </div>
+
+    <!-- Manual Reset Box -->
+    <div class="manual-reset-box">
+        <div class="manual-reset-label">🔍 Reset Job thủ công</div>
+        <form class="manual-reset-form" action="reset_job.php" method="get">
+            <input type="text" name="reset" id="manual-job-id" placeholder="Nhập Job ID (vd: ZEIKTQ0Q)" autocomplete="off" spellcheck="false" />
+            <button type="submit" class="btn btn-reset" onclick="return document.getElementById('manual-job-id').value.trim() ? confirm('Reset job ' + document.getElementById('manual-job-id').value.trim() + '?') : (alert('Vui lòng nhập Job ID'), false)">🔁 Reset</button>
+        </form>
     </div>
 
     <?php if (isset($_GET['msg'])): ?>
