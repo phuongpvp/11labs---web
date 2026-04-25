@@ -1,3 +1,13 @@
+# ==============================================================
+# CHẾ ĐỘ BẢO TRÌ (Bật khi chuyển Server)
+# Bỏ dấu # ở 4 dòng dưới đây để BẬT chế độ bảo trì.
+# Thay 123.456.789.000 bằng IP thật của máy bạn (nếu muốn vào được web).
+# ==============================================================
+# RewriteEngine On
+# RewriteCond %{REMOTE_ADDR} !^123\.456\.789\.000$
+# RewriteCond %{REQUEST_URI} !^/maintenance\.html$
+# RewriteRule ^(.*)$ /maintenance.html [R=302,L]
+
 # Clean URLs - Bỏ đuôi .html
 RewriteEngine On
 

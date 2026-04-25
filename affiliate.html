@@ -108,7 +108,7 @@
         /* Stats Grid */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 16px;
             margin-bottom: 24px;
         }
@@ -348,10 +348,6 @@
                 <div class="label">Tổng điểm thưởng</div>
                 <div class="value success" id="totalBonus">0</div>
             </div>
-            <div class="stat-item">
-                <div class="label">Doanh thu từ giới thiệu</div>
-                <div class="value" style="color: #f59e0b;" id="totalRevenue">0đ</div>
-            </div>
         </div>
 
         <!-- Referral Link -->
@@ -416,8 +412,8 @@
 
         <!-- Revenue Payments -->
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-coins" style="color: #f59e0b;"></i> Doanh thu từ giới thiệu</div>
-            <div class="card-desc">Danh sách các giao dịch thanh toán từ người bạn đã giới thiệu</div>
+            <div class="card-title"><i class="fa-solid fa-history" style="color: #f59e0b;"></i> Lịch sử khách mua gói</div>
+            <div class="card-desc">Danh sách các giao dịch thanh toán từ người bạn đã giới thiệu (Cơ sở để tính điểm thưởng)</div>
             <div class="table-wrap">
                 <table>
                     <thead>
@@ -496,7 +492,9 @@
 
                 // Revenue table
                 const revTbody = document.getElementById('revenueTable');
-                document.getElementById('totalRevenue').textContent = formatNumber(info.total_revenue) + 'đ';
+                if (document.getElementById('totalRevenue')) {
+                    document.getElementById('totalRevenue').textContent = formatNumber(info.total_revenue) + 'đ';
+                }
 
                 if (!info.revenue_payments || info.revenue_payments.length === 0) {
                     revTbody.innerHTML = '<tr><td colspan="4" class="empty-state"><i class="fa-solid fa-receipt"></i>Chưa có giao dịch nào từ người giới thiệu.</td></tr>';

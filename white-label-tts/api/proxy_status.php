@@ -24,9 +24,10 @@ if (!$jobId) {
 
 // Verify this job belongs to this customer
 $db = getDB();
-$stmt = $db->prepare("SELECT id FROM tts_history WHERE job_id = ? AND customer_id = ?");
+$stmt = $db->prepare("SELECT id, status, characters_used FROM tts_history WHERE job_id = ? AND customer_id = ?");
 $stmt->execute([$jobId, $customer['id']]);
-if (!$stmt->fetch()) {
+$job = $stmt->fetch();
+if (!$job) {
     jsonResponse(['error' => 'Job not found'], 404);
 }
 
@@ -42,6 +43,13 @@ if ($result['code'] === 200) {
         $db->prepare("UPDATE tts_history SET status = 'completed', result_file = ? WHERE job_id = ?")
             ->execute([$downloadUrl, $jobId]);
     } elseif (strpos($data['status'] ?? '', 'failed') !== false) {
+        if ($job['status'] !== 'failed') {
+            $chars = (int)($job['characters_used'] ?? 0);
+            if ($chars > 0) {
+                $db->prepare("UPDATE customers SET quota_used = MAX(0, quota_used - ?) WHERE id = ?")
+                   ->execute([$chars, $customer['id']]);
+            }
+        }
         $db->prepare("UPDATE tts_history SET status = 'failed' WHERE job_id = ?")->execute([$jobId]);
     }
 

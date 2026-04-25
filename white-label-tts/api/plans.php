@@ -266,7 +266,7 @@ function handleActivate($input)
     if (!$customer)
         jsonResponse(['error' => 'Khách hàng không tồn tại'], 404);
 
-    $stmt = $db->prepare("UPDATE customers SET quota_allocated = ?, quota_used = 0, plan_name = ? WHERE id = ?");
+    $stmt = $db->prepare("UPDATE customers SET quota_allocated = quota_allocated + ?, plan_name = ? WHERE id = ?");
     $stmt->execute([$plan['quota'], $plan['name'], $customerId]);
 
     $stmt = $db->prepare("INSERT INTO plan_activations (customer_id, plan_id, plan_name, quota_granted) VALUES (?, ?, ?, ?)");
@@ -316,7 +316,7 @@ function handleApproveOrder($input)
         jsonResponse(['error' => 'Đơn không tồn tại hoặc đã xử lý'], 404);
 
     // Activate plan for customer
-    $stmt = $db->prepare("UPDATE customers SET quota_allocated = ?, quota_used = 0, plan_name = ? WHERE id = ?");
+    $stmt = $db->prepare("UPDATE customers SET quota_allocated = quota_allocated + ?, plan_name = ? WHERE id = ?");
     $stmt->execute([$order['quota'], $order['plan_name'], $order['customer_id']]);
 
     // Log activation

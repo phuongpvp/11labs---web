@@ -72,6 +72,19 @@ if ($action === 'check_quota') {
 
     if ($jobId && $status) {
         $db = getDB();
+        
+        $stmt = $db->prepare("SELECT status, characters_used FROM tts_history WHERE job_id = ? AND customer_id = ?");
+        $stmt->execute([$jobId, $customer['id']]);
+        $job = $stmt->fetch();
+        
+        if ($job && strpos($status, 'failed') !== false && $job['status'] !== 'failed') {
+            $chars = (int)($job['characters_used'] ?? 0);
+            if ($chars > 0) {
+                $db->prepare("UPDATE customers SET quota_used = MAX(0, quota_used - ?) WHERE id = ?")
+                   ->execute([$chars, $customer['id']]);
+            }
+        }
+        
         $db->prepare("UPDATE tts_history SET status = ?, result_file = ? WHERE job_id = ? AND customer_id = ?")
             ->execute([$status, $resultFile, $jobId, $customer['id']]);
     }

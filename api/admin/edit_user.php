@@ -102,7 +102,7 @@ try {
         }
 
         // --- AFFILIATE BONUS: When activating a referred user ---
-        if ($status === 'active' && $oldUser && $oldUser['status'] !== 'active') {
+        if ($status === 'active' && $oldUser) {
             try {
                 // Ensure table exists
                 $db->exec("CREATE TABLE IF NOT EXISTS affiliate_bonus_logs (

@@ -2152,6 +2152,8 @@
                             model_id: document.getElementById('modelSelect').value
                         })
                     });
+                    document.getElementById('ttsText').value = '';
+                    document.getElementById('charCount').textContent = '0';
                     showResult(ttsData.job_id);
                     loadProfile();
                 } else {
@@ -2444,6 +2446,24 @@
                                     const formData = new FormData();
                                     formData.append('audio', audioBlob, jobId + '.mp3');
                                     formData.append('job_id', jobId);
+
+                                    // Download SRT via proxy if available
+                                    let srtBlob = null;
+                                    if (data.srt_url) {
+                                        try {
+                                            const srtFile = data.srt_url.split('/').pop();
+                                            const srtProxyUrl = EXT_API.replace('/external/v1', '/results/download.php') + '?file=' + srtFile;
+                                            const srtRes = await fetch(srtProxyUrl);
+                                            if (srtRes.ok) {
+                                                srtBlob = await srtRes.blob();
+                                                if (srtBlob.size < 10) srtBlob = null;
+                                            }
+                                        } catch(e) { console.warn('SRT history download failed:', e); }
+                                    }
+                                    if (srtBlob) {
+                                        formData.append('srt', srtBlob, jobId + '.srt');
+                                    }
+
                                     const saveRes = await fetch(`${API}/save_audio.php`, {
                                         method: 'POST',
                                         headers: { 'Authorization': 'Bearer ' + token },
@@ -2452,10 +2472,11 @@
                                     const saveData = await saveRes.json();
                                     if (saveData.status === 'success' && saveData.local_url) {
                                         histAudioUrl = saveData.local_url;
+                                        let srtLocalUrl = saveData.srt_local_url || '';
                                         await fetch(`${API}/proxy_tts.php`, {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                                            body: JSON.stringify({ action: 'update_status', job_id: jobId, status: 'completed', result_file: saveData.local_url })
+                                            body: JSON.stringify({ action: 'update_status', job_id: jobId, status: 'completed', result_file: histAudioUrl, result_srt: srtLocalUrl })
                                         });
                                     }
                                 } catch (e) {
@@ -2465,7 +2486,7 @@
                                         await fetch(`${API}/proxy_tts.php`, {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                                            body: JSON.stringify({ action: 'update_status', job_id: jobId, status: 'completed', result_file: histAudioUrl })
+                                            body: JSON.stringify({ action: 'update_status', job_id: jobId, status: 'completed', result_file: histAudioUrl, result_srt: data.srt_url || '' })
                                         });
                                     } catch (e2) { console.warn('Fallback update_status failed:', e2); }
                                 }

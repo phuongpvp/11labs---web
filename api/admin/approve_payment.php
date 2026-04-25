@@ -83,6 +83,41 @@ try {
     $stmt = $db->prepare("UPDATE payments SET status = 'completed' WHERE id = ?");
     $stmt->execute([$paymentId]);
 
+    // --- AFFILIATE BONUS: When a payment is completed ---
+    try {
+        $db->exec("CREATE TABLE IF NOT EXISTS affiliate_bonus_logs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            referrer_id INT NOT NULL,
+            referred_id INT NOT NULL,
+            bonus_amount INT NOT NULL DEFAULT 0,
+            plan_quota INT NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX (referrer_id), INDEX (referred_id)
+        )");
+
+        $stmtRef = $db->prepare("SELECT referrer_id FROM users WHERE id = ?");
+        $stmtRef->execute([$userId]);
+        $referrerId = $stmtRef->fetchColumn();
+
+        if ($referrerId) {
+            $stmtChk = $db->prepare("SELECT id FROM affiliate_bonus_logs WHERE referrer_id = ? AND referred_id = ?");
+            $stmtChk->execute([$referrerId, $userId]);
+
+            if (!$stmtChk->fetch()) {
+                $bonusRate = floatval(getSystemSetting('affiliate_commission_rate', '10')) / 100;
+                $bonusAmount = (int) ceil($package['quota'] * $bonusRate); // Using the paid package's quota
+
+                if ($bonusAmount > 0) {
+                    $db->prepare("UPDATE users SET quota_total = quota_total + ? WHERE id = ?")->execute([$bonusAmount, $referrerId]);
+                    $db->prepare("UPDATE users SET quota_total = quota_total + ? WHERE id = ?")->execute([$bonusAmount, $userId]);
+                    $db->prepare("INSERT INTO affiliate_bonus_logs (referrer_id, referred_id, bonus_amount, plan_quota) VALUES (?, ?, ?, ?)")->execute([$referrerId, $userId, $bonusAmount, $package['quota']]);
+                }
+            }
+        }
+    } catch (Exception $affEx) {
+        error_log("Affiliate Bonus Error: " . $affEx->getMessage());
+    }
+
     $db->commit();
 
     // Set celebration flag for customer popup

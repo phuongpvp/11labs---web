@@ -96,6 +96,23 @@ if (isset($_GET['reset_all'])) {
     exit;
 }
 
+// === ACTION: Check a specific job ===
+$checkedJob = null;
+if (isset($_GET['check']) && !empty($_GET['check'])) {
+    $jobId = trim($_GET['check']);
+    try {
+        $db = getDB();
+        $stmt = $db->prepare("SELECT j.*, u.email as user_email, LENGTH(j.full_text) as text_length FROM conversion_jobs j LEFT JOIN users u ON j.user_id = u.id WHERE j.id = ?");
+        $stmt->execute([$jobId]);
+        $checkedJob = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$checkedJob) {
+            $msg = "❌ Job $jobId không tồn tại trong hệ thống.";
+        }
+    } catch (Exception $e) {
+        $msg = "❌ Lỗi: " . $e->getMessage();
+    }
+}
+
 // === DISPLAY: List stuck jobs ===
 try {
     $db = getDB();
@@ -351,6 +368,15 @@ try {
         </div>
     </div>
 
+    <!-- Manual Check Box -->
+    <div class="manual-reset-box" style="border-color: #10b981; margin-bottom: 16px;">
+        <div class="manual-reset-label" style="color: #34d399;">👁️ Kiểm tra trạng thái Job</div>
+        <form class="manual-reset-form" action="reset_job.php" method="get">
+            <input type="text" name="check" placeholder="Nhập Job ID cần kiểm tra (vd: D1577EE1)" autocomplete="off" spellcheck="false" value="<?= isset($_GET['check']) ? htmlspecialchars($_GET['check']) : '' ?>" />
+            <button type="submit" class="btn btn-reset" style="background: #059669;">🔍 Kiểm tra</button>
+        </form>
+    </div>
+
     <!-- Manual Reset Box -->
     <div class="manual-reset-box">
         <div class="manual-reset-label">🔍 Reset Job thủ công</div>
@@ -366,7 +392,32 @@ try {
         </div>
     <?php endif; ?>
 
-    <?php if (empty($stuckJobs)): ?>
+    <?php if (isset($checkedJob) && $checkedJob): ?>
+        <div style="background: #064e3b; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+            <h3 style="color: #34d399; margin-bottom: 12px;">📋 Chi tiết Job: <?= htmlspecialchars($checkedJob['id']) ?></h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px; color: #e2e8f0; line-height: 1.6;">
+                <div><strong>Email:</strong> <?= htmlspecialchars($checkedJob['user_email'] ?? "User #{$checkedJob['user_id']}") ?></div>
+                <div><strong>Trạng thái:</strong> <span style="color: #fbbf24; font-weight: bold;"><?= htmlspecialchars($checkedJob['status'] ?: '(trống)') ?></span></div>
+                <div><strong>Ký tự:</strong> <?= number_format((int)$checkedJob['text_length']) ?></div>
+                <div><strong>Tiến độ:</strong> <?= (int)$checkedJob['processed_chunks'] ?>/<?= (int)$checkedJob['total_chunks'] ?> chunks</div>
+                <div><strong>Worker:</strong> <span style="color: #93c5fd;"><?= htmlspecialchars($checkedJob['worker_uuid'] ?: '—') ?></span></div>
+                <div><strong>Attempts:</strong> <?= (int)$checkedJob['attempts'] ?> lần thử</div>
+                <div><strong>Model:</strong> <?= htmlspecialchars($checkedJob['model_id']) ?></div>
+                <div><strong>Tạo lúc:</strong> <?= $checkedJob['created_at'] ?></div>
+                <div style="grid-column: 1 / -1;">
+                    <strong>API Keys:</strong> <span style="font-family: monospace; color: #94a3b8;"><?= htmlspecialchars($checkedJob['api_key_ids'] ?: '—') ?></span>
+                </div>
+                <div style="grid-column: 1 / -1; max-height: 100px; overflow-y: auto; background: #022c22; padding: 8px; border-radius: 4px; font-size: 12px; color: #cbd5e1; white-space: pre-wrap;"><strong>Đoạn text cuối (Previous Chunk Text):</strong>
+<?= htmlspecialchars($checkedJob['previous_chunk_text'] ?: '—') ?></div>
+            </div>
+            <div style="margin-top: 16px; display: flex; gap: 10px;">
+                <a href="reset_job.php?reset=<?= urlencode($checkedJob['id']) ?>" class="btn btn-reset" onclick="return confirm('Reset job <?= $checkedJob['id'] ?>?')">🔁 Reset Job Này</a>
+                <a href="reset_job.php?delete=<?= urlencode($checkedJob['id']) ?>" class="btn btn-delete" onclick="return confirm('Xóa job <?= $checkedJob['id'] ?>? Không thể hoàn tác!')">🗑️ Xóa</a>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <?php if (empty($stuckJobs) && !$checkedJob): ?>
         <div class="empty">
             <div class="icon">✅</div>
             <p>Không có job nào bị treo</p>

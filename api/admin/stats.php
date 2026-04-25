@@ -118,6 +118,7 @@ try {
     $userStats = $db->query("SELECT COUNT(*) as total_users, SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_users, SUM(quota_used) as total_chars_used FROM users")->fetch();
     $keyStats = $db->query("SELECT COUNT(*) as total_keys, SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_keys, SUM(credits_remaining) as total_credits, SUM(CASE WHEN status = 'active' THEN CAST(REPLACE(credits_remaining, '.', '') AS SIGNED) ELSE 0 END) as active_credits FROM api_keys")->fetch();
     $todayStats = $db->query("SELECT COUNT(*) as conversions_today, SUM(characters_used) as chars_today FROM usage_logs WHERE DATE(created_at) = CURDATE()")->fetch();
+    $yesterdayStats = $db->query("SELECT COUNT(*) as conversions_yesterday, SUM(characters_used) as chars_yesterday FROM usage_logs WHERE DATE(created_at) = CURDATE() - INTERVAL 1 DAY")->fetch();
 
     $revenueStats = $db->query("SELECT SUM(amount) as all_time_revenue, SUM(CASE WHEN DATE(created_at) = CURDATE() THEN amount ELSE 0 END) as revenue_today FROM payments WHERE status = 'completed'")->fetch();
     $totalHarvested = $db->query("SELECT COALESCE(SUM(amount), 0) FROM admin_harvests")->fetchColumn();
@@ -244,7 +245,7 @@ try {
 
     jsonResponse([
         'status' => 'success',
-        'summary' => ['users' => $userStats, 'keys' => $keyStats, 'today' => $todayStats, 'revenue' => $revenueStats],
+        'summary' => ['users' => $userStats, 'keys' => $keyStats, 'today' => $todayStats, 'yesterday' => $yesterdayStats, 'revenue' => $revenueStats],
         'top_users' => $topUsers,
         'api_keys' => $keys,
         'recent_logs' => $recentLogs,

@@ -107,6 +107,8 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
 
         .container {
             max-width: 1400px;
+            padding: 0 20px;
+            box-sizing: border-box;
             margin: 0 auto;
         }
 
@@ -475,6 +477,48 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
                 transform: translateY(0);
             }
         }
+
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+            align-items: start;
+        }
+
+        .dashboard-layout .stats-grid {
+            margin-bottom: 0;
+        }
+
+        @media (min-width: 1024px) {
+            .dashboard-layout {
+                grid-template-columns: 320px 1fr;
+            }
+            .dashboard-layout .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 15px;
+            }
+            #tab-dashboard .stats-grid .stat-card:last-child {
+                grid-column: span 2;
+            }
+            .stat-card {
+                padding: 12px;
+            }
+            .stat-card h3 {
+                font-size: 0.8rem;
+            }
+            .stat-card .value {
+                font-size: 1.3rem;
+            }
+            .nav-tabs {
+                margin-bottom: 15px;
+            }
+        }
     </style>
 </head>
 
@@ -542,6 +586,11 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
                         onclick="loadStats()">
                         <i class="fa-solid fa-rotate"></i>
                     </button>
+                    <a href="api/admin/view_affiliate_logs.php" target="_blank" class="btn"
+                        style="background: var(--surface); border: 1px solid var(--border); color: #f59e0b; width: auto; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"
+                        title="Xem lịch sử cộng điểm Affiliate">
+                        <i class="fa-solid fa-gift"></i>
+                    </a>
                     <button class="btn" style="background: var(--error); color: white; width: auto;" onclick="logout()">
                         <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
                     </button>
@@ -574,17 +623,16 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
                 <button class="tab-btn" id="btn-docs" onclick="switchTab('docs')"><i class="fa-solid fa-book"></i> Tài
                     liệu</button>
             </nav>
+        </div> <!-- End container for header and nav -->
 
-            <!-- TAB: DASHBOARD -->
-            <div id="tab-dashboard" class="tab-content active">
-                <div class="stats-grid">
+        <!-- TAB: DASHBOARD -->
+        <div id="tab-dashboard" class="tab-content active">
+            <div class="dashboard-layout">
+                    <div>
+                        <div class="stats-grid">
                     <div class="stat-card">
-                        <h3>Tổng khách hàng</h3>
-                        <div class="value" id="statTotalUsers">-</div>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Khách đang hoạt động</h3>
-                        <div class="value" id="statActiveUsers">-</div>
+                        <h3>Tổng khách hàng / Khách đang hoạt động</h3>
+                        <div class="value"><span id="statTotalUsers">-</span> / <span id="statActiveUsers">-</span></div>
                     </div>
                     <div class="stat-card">
                         <h3>API Keys hoạt động</h3>
@@ -603,18 +651,18 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
                         <div class="value" id="statTodayChars">-</div>
                     </div>
                     <div class="stat-card">
-                        <h3>Doanh thu hôm nay</h3>
-                        <div class="value" id="statTodayRevenue">-</div>
+                        <h3>Ký tự hôm qua</h3>
+                        <div class="value" id="statYesterdayChars">-</div>
                     </div>
                     <div class="stat-card">
-                        <h3>Tổng doanh thu</h3>
-                        <div class="value" id="statTotalRevenue">-</div>
+                        <h3>Doanh thu hôm nay</h3>
+                        <div class="value" id="statTodayRevenue">-</div>
                     </div>
                     <div class="stat-card"
                         style="border: 2px solid var(--success); background: rgba(34, 197, 94, 0.05);">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div>
-                                <h3 style="color: var(--success);">Số dư chưa rút</h3>
+                                <h3 style="color: var(--success);">Tổng doanh thu</h3>
                                 <div class="value" id="statHarvestableBalance" style="color: var(--success);">-</div>
                             </div>
                             <button class="btn btn-success" style="width: auto; padding: 5px 12px; font-size: 0.8rem;"
@@ -624,10 +672,12 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
                         </div>
                     </div>
                 </div>
+                    </div>
 
-                <div class="section glow-border">
+                    <div style="display: flex; flex-direction: column; gap: 25px;">
+                        <div class="section glow-border" style="margin-bottom: 0;">
                     <h2>Hoạt động gần đây</h2>
-                    <div class="scrollable-table" style="max-height: 300px;">
+                    <div class="scrollable-table" style="max-height: 600px;">
                         <table>
                             <thead>
                                 <tr>
@@ -650,7 +700,7 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
                     </div>
                 </div>
 
-                <div class="section" style="border-top: 2px solid var(--primary);">
+                        <div class="section" style="border-top: 2px solid var(--primary); margin-bottom: 0;">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <h2 style="margin:0;"><i class="fa-solid fa-terminal"></i> ⚡ Live Server Logs (Hoạt động máy
@@ -675,10 +725,10 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
                             </tbody>
                         </table>
                     </div>
+                        </div>
+                    </div>
                 </div>
-
             </div>
-        </div>
 
         <!-- TAB: HEALTH -->
         <div id="tab-health" class="tab-content">
@@ -694,9 +744,9 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
             </div>
 
             <div class="section">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                     <h2 style="margin:0"><i class="fa-solid fa-server"></i> Cụm máy chủ Colab (Worker Pool)</h2>
-                    <div style="display: flex; gap: 10px;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <button class="btn btn-warning" style="width: auto; font-size: 0.9rem; padding: 8px 15px;"
                             onclick="retryFailedJobs()">
                             <i class="fa-solid fa-rotate-right"></i> Thử lại tất cả Job lỗi
@@ -910,9 +960,9 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
         <!-- TAB: NGROK KEYS -->
         <div id="tab-ngrok" class="tab-content">
             <div class="section">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                     <h2 style="margin:0"><i class="fa-solid fa-network-wired"></i> Quản lý Ngrok Token Pool</h2>
-                    <div style="display: flex; gap: 10px;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <button class="btn btn-success" style="width:auto" onclick="showAddNgrokModal()"><i
                                 class="fa-solid fa-plus"></i> Thêm Token</button>
                         <button class="btn" style="width:auto; background:#f59e0b; color:white;"
@@ -1032,13 +1082,14 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
                 </div>
             </div>
             <div class="section">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h2>Cấu hình các Gói (Packages)</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h2 style="margin: 0;">Cấu hình các Gói (Packages)</h2>
                     <button class="btn btn-primary" style="width: auto; padding: 8px 20px;"
                         onclick="document.getElementById('addPackageModal').style.display='flex'">
                         <i class="fa-solid fa-plus-circle"></i> Thêm Gói Mới
                     </button>
                 </div>
+                <div class="scrollable-table">
                 <table>
                     <thead>
                         <tr>
@@ -1058,6 +1109,7 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
                         </tr>
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
 
@@ -1318,7 +1370,6 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
             </div>
         </div>
 
-    </div>
     </div>
 
     <!-- Document Editor Modal -->
@@ -1800,6 +1851,7 @@ email2@example.com:password2"></textarea>
                 if (typeof startColabRefresh === 'function') startColabRefresh();
             } else if (tabId === 'keys') {
                 loadKeyPool();
+                restorePoolImportProgress();
             } else if (tabId === 'docs') {
                 loadAdminDocs();
             }
@@ -1988,10 +2040,16 @@ email2@example.com:password2"></textarea>
 
                     document.getElementById('statTodayConversions').innerText = Number(data.summary.today.conversions_today || 0).toLocaleString('vi-VN');
                     document.getElementById('statTodayChars').innerText = Number(data.summary.today.chars_today || 0).toLocaleString('vi-VN');
+                    
+                    if (document.getElementById('statYesterdayChars') && data.summary.yesterday) {
+                        document.getElementById('statYesterdayChars').innerText = Number(data.summary.yesterday.chars_yesterday || 0).toLocaleString('vi-VN');
+                    }
 
                     const totalRev = parseFloat(data.summary.revenue.total_revenue || 0);
                     const todayRev = parseFloat(data.summary.revenue.revenue_today || 0);
-                    document.getElementById('statTotalRevenue').innerText = Number(data.summary.revenue.total_revenue || 0).toLocaleString('vi-VN') + 'đ';
+                    if (document.getElementById('statTotalRevenue')) {
+                        document.getElementById('statTotalRevenue').innerText = Number(data.summary.revenue.total_revenue || 0).toLocaleString('vi-VN') + 'đ';
+                    }
 
                     // Harvestable Balance logic
                     const harvestableBalance = document.getElementById('statHarvestableBalance');
@@ -2327,8 +2385,12 @@ email2@example.com:password2"></textarea>
                     statusBadge = `<span class="badge badge-warning" title="${subStatus}">⏳ ${subStatus.substring(0, 20)}${subStatus.length > 20 ? '...' : ''}</span> <button onclick="cancelJob('${l.id}')" style="background:#e74c3c;color:white;border:none;padding:3px 8px;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:600;" title="Hủy job và hoàn trả điểm">🚫 Hủy</button>`;
                 } else if (s === 'pending') {
                     statusBadge = '<span class="badge" style="background: #3498db; color: white;">🕒 Chờ xử lý</span> <button onclick="retryPendingJob(\''+l.id+'\')" style="background:#f59e0b;color:white;border:none;padding:3px 8px;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:600;" title="Reset và dispatch lại">↻ Chạy lại</button> <button onclick="cancelJob(\''+l.id+'\')" style="background:#e74c3c;color:white;border:none;padding:3px 8px;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:600;" title="Hủy job">🚫 Hủy</button>';
+                } else if (s === 'retrying') {
+                    statusBadge = '<span class="badge" style="background: #8b5cf6; color: white;">🔁 Đang thử lại</span> <button onclick="cancelJob(\''+l.id+'\')" style="background:#e74c3c;color:white;border:none;padding:3px 8px;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:600;" title="Hủy job">🚫 Hủy</button>';
+                } else if (s === 'canceled' || s === 'cancelled') {
+                    statusBadge = '<span class="badge" style="background: #6b7280; color: white;">🚫 Bị hủy</span>';
                 } else {
-                    statusBadge = '<span class="badge" style="background:var(--border);color:var(--text-muted)">—</span>';
+                    statusBadge = `<span class="badge" style="background:var(--border);color:var(--text-muted)" title="${s}">—</span>`;
                 }
                 const workerName = l.worker_uuid ? (workerNameMap[l.worker_uuid] || l.worker_uuid.substring(0, 8) + '...') : null;
                 const workerDisplay = workerName
@@ -3037,12 +3099,22 @@ email2@example.com:password2"></textarea>
                 const failedKeys = [];
                 let detailsHtml = '';
 
+                // Save initial state to localStorage
+                const saveProgress = () => {
+                    localStorage.setItem('poolImportProgress', JSON.stringify({
+                        total, successCount, failedCount, detailsHtml,
+                        remainingKeys: keysToAdd.slice(successCount + failedCount).map(k => k.key_text || k),
+                        timestamp: Date.now()
+                    }));
+                };
+
                 // Update button with live counter
                 const updateBtn = () => {
                     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${successCount + failedCount}/${total} — <span style="color:#4ade80">✅${successCount}</span> <span style="color:#f87171">❌${failedCount}</span>`;
                 };
                 updateBtn();
                 listDiv.innerHTML = `<div style="color: var(--text-muted); padding: 10px;">Đang thêm ${total} key vào hệ thống...</div>`;
+                saveProgress();
 
                 // 2. Add keys ONE BY ONE with live counter
                 for (let i = 0; i < keysToAdd.length; i++) {
@@ -3089,6 +3161,7 @@ email2@example.com:password2"></textarea>
                         </div>`;
                     }
                     updateBtn();
+                    saveProgress();
                 }
 
                 // 3. Show final results
@@ -3110,6 +3183,12 @@ email2@example.com:password2"></textarea>
                     });
                 }
 
+                // Mark as complete
+                localStorage.setItem('poolImportProgress', JSON.stringify({
+                    total, successCount, failedCount, detailsHtml,
+                    completed: true, timestamp: Date.now()
+                }));
+
                 // Refresh pool and keys table
                 loadKeyPool();
                 if (successCount > 0) loadStats();
@@ -3119,6 +3198,61 @@ email2@example.com:password2"></textarea>
 
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-plus-circle"></i> Thêm vào hệ thống';
+        }
+
+        // Restore pool import progress on page load
+        function restorePoolImportProgress() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('poolImportProgress'));
+                if (!saved) return;
+
+                // Only show if less than 1 hour old
+                if (Date.now() - saved.timestamp > 3600000) {
+                    localStorage.removeItem('poolImportProgress');
+                    return;
+                }
+
+                const resultsDiv = document.getElementById('poolResults');
+                const listDiv = document.getElementById('poolResultsList');
+                const btn = document.getElementById('btnAddFromPool');
+                if (!resultsDiv || !listDiv) return;
+
+                resultsDiv.style.display = 'block';
+
+                if (saved.completed) {
+                    // Show completed results
+                    listDiv.innerHTML = `<div style="padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="color: #22c55e; font-weight: 600;">✅ ${saved.successCount}</span> · 
+                            <span style="color: var(--error); font-weight: 600;">❌ ${saved.failedCount}</span> · 
+                            Tổng: ${saved.total}
+                        </div>
+                        <button class="btn" style="width:auto; padding:4px 12px; font-size:0.75rem; background:var(--border); color:var(--text-muted);" onclick="localStorage.removeItem('poolImportProgress'); this.closest('#poolResults').style.display='none';">
+                            <i class="fa-solid fa-xmark"></i> Đóng
+                        </button>
+                    </div>
+                    <div style="background: #000; border-radius: 8px; padding: 8px;">${saved.detailsHtml}</div>`;
+                } else {
+                    // Show interrupted progress
+                    const processed = saved.successCount + saved.failedCount;
+                    const remaining = saved.remainingKeys?.length || (saved.total - processed);
+                    listDiv.innerHTML = `<div style="padding: 10px; background: rgba(234,179,8,0.1); border: 1px solid rgba(234,179,8,0.3); border-radius: 8px; margin-bottom: 8px;">
+                        <div style="color: #eab308; font-weight: 600; margin-bottom: 6px;">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Phiên trước bị gián đoạn!
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-muted);">
+                            Đã xử lý: ${processed}/${saved.total} — 
+                            <span style="color: #22c55e;">✅ ${saved.successCount}</span> · 
+                            <span style="color: var(--error);">❌ ${saved.failedCount}</span>
+                            ${remaining > 0 ? `<br>Còn <strong style="color: #eab308;">${remaining} key</strong> chưa xử lý (đã trả về kho).` : ''}
+                        </div>
+                        <button class="btn" style="width:auto; padding:4px 12px; font-size:0.75rem; background:var(--border); color:var(--text-muted); margin-top: 8px;" onclick="localStorage.removeItem('poolImportProgress'); this.closest('#poolResults').style.display='none';">
+                            <i class="fa-solid fa-xmark"></i> Đóng
+                        </button>
+                    </div>
+                    <div style="background: #000; border-radius: 8px; padding: 8px;">${saved.detailsHtml}</div>`;
+                }
+            } catch (e) { /* ignore */ }
         }
 
         async function retryPoolKey(keyText, btnEl) {

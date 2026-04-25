@@ -79,6 +79,20 @@ if ($action === 'check_quota') {
 
     if ($jobId && $status) {
         $db = getDB();
+        
+        // Fetch current job to check if we need to refund
+        $stmt = $db->prepare("SELECT status, characters_used FROM tts_history WHERE job_id = ? AND customer_id = ?");
+        $stmt->execute([$jobId, $customer['id']]);
+        $job = $stmt->fetch();
+        
+        if ($job && strpos($status, 'failed') !== false && $job['status'] !== 'failed') {
+            $chars = (int)($job['characters_used'] ?? 0);
+            if ($chars > 0) {
+                $db->prepare("UPDATE customers SET quota_used = MAX(0, quota_used - ?) WHERE id = ?")
+                   ->execute([$chars, $customer['id']]);
+            }
+        }
+        
         // Ensure columns exist
         try { $db->exec("ALTER TABLE tts_history ADD COLUMN error_message TEXT DEFAULT ''"); } catch (Exception $e) {}
         try { $db->exec("ALTER TABLE tts_history ADD COLUMN result_srt TEXT DEFAULT ''"); } catch (Exception $e) {}

@@ -178,8 +178,8 @@ if ($method === 'POST') {
             $db->prepare("UPDATE conversion_jobs SET attempts = attempts + 1 WHERE id = ?")->execute([$jobId]);
             $attempts++;
 
-            // === RELEASE LIMIT: Nếu đã release >= 2 lần → fail luôn, không nhả tiếp ===
-            if ($attempts >= 2) {
+            // === RELEASE LIMIT: Nếu đã release >= 5 lần → fail luôn, không nhả tiếp ===
+            if ($attempts >= 5) {
                 logToFile('admin_actions.log', "RELEASE_JOB LIMIT: Job $jobId đã release $attempts lần. Hủy job và hoàn trả ký tự.");
 
                 // Full refund
@@ -212,13 +212,13 @@ if ($method === 'POST') {
                 }
 
                 // Mark as failed
-                $failMsg = "failed: Timeout liên tục sau $attempts lần thử trên nhiều máy chủ. Vui lòng thử lại sau. (Đã hoàn trả $totalChars ký tự)";
+                $failMsg = "failed: Bị lỗi hoặc kiệt sức trên nhiều máy chủ sau $attempts lần nhảy. Vui lòng thử lại sau. (Đã hoàn trả $totalChars ký tự)";
                 $db->prepare("UPDATE conversion_jobs SET status = ?, worker_uuid = NULL WHERE id = ?")
                     ->execute([mb_substr($failMsg, 0, 255, 'UTF-8'), $jobId]);
 
                 // Log refund to worker_logs for admin visibility
                 try {
-                    $refundMsg = "🚫 Job $jobId bị hủy sau $attempts lần timeout liên tiếp. Đã hoàn trả $totalChars ký tự cho User {$job['user_id']}.";
+                    $refundMsg = "🚫 Job $jobId bị hủy sau $attempts lần nhảy máy chủ. Đã hoàn trả $totalChars ký tự cho User {$job['user_id']}.";
                     $stmtL = $db->prepare("INSERT INTO worker_logs (worker_uuid, worker_name, job_id, message, level) VALUES (?, ?, ?, ?, ?)");
                     $stmtL->execute(['SYSTEM', 'System Engine', $jobId, $refundMsg, 'error']);
                 } catch (Exception $e) {}
@@ -232,7 +232,7 @@ if ($method === 'POST') {
                 jsonResponse(['status' => 'failed', 'message' => "Job cancelled after $attempts release attempts"]);
             }
 
-            // === NORMAL RELEASE: attempts < 2, nhả cho máy khác ===
+            // === NORMAL RELEASE: attempts < 5, nhả cho máy khác ===
 
             // Update job: reset to pending with partial progress info
             $partialDbPath = $partialPath ? ($jobId . '_partial.mp3') : null;
@@ -246,7 +246,7 @@ if ($method === 'POST') {
                     ->execute([$workerUuid]);
             }
 
-            logToFile('admin_actions.log', "RELEASE_JOB: Job $jobId released (attempt $attempts/2). $processedChars/$totalChars chars done. Redispatching...");
+            logToFile('admin_actions.log', "RELEASE_JOB: Job $jobId released (attempt $attempts/5). $processedChars/$totalChars chars done. Redispatching...");
 
             // Immediate redispatch
             sleep(2);
@@ -595,7 +595,7 @@ if ($method === 'POST') {
                     $logPrefix = $isIpBlock ? 'AUTO-REDISPATCH (IP BLOCK)' : 'AUTO-REDISPATCH';
                     logToFile('admin_actions.log', "$logPrefix: Job $jobId failed. Attempts: $attempts. Raw status: " . substr($rawStatus, 0, 80));
 
-                    if ($attempts < 3) {
+                    if ($attempts < 5) {
                         // Set 'retrying' immediately so API consumers don't see 'failed'
                         $db->prepare("UPDATE conversion_jobs SET status = 'retrying', worker_uuid = NULL WHERE id = ?")
                             ->execute([$jobId]);
@@ -611,7 +611,7 @@ if ($method === 'POST') {
                             logToFile('admin_actions.log', "$logPrefix SUCCESS: Job $jobId -> worker {$redispatch['worker']}");
                         }
                     } else {
-                        logToFile('admin_actions.log', "$logPrefix SKIP: Job $jobId already at $attempts/3 attempts.");
+                        logToFile('admin_actions.log', "$logPrefix SKIP: Job $jobId already at $attempts/5 attempts.");
                     }
 
                     jsonResponse(['status' => 'success', 'message' => 'Job updated and auto-redispatched', 'refunded' => $refundChars ?? 0]);
