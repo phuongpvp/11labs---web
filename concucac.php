@@ -424,6 +424,11 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
             padding-bottom: 1px;
             overflow-x: auto;
             white-space: nowrap;
+            scrollbar-width: none; /* Firefox */
+        }
+
+        .nav-tabs::-webkit-scrollbar {
+            display: none; /* Chrome/Safari */
         }
 
         .tab-btn {
@@ -611,11 +616,11 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
                     Keys</button>
                 <button class="tab-btn" id="btn-billing" onclick="switchTab('billing')"><i
                         class="fa-solid fa-wallet"></i> Gói & Tiền</button>
-                <button class="tab-btn" id="btn-logs" onclick="switchTab('logs')"><i class="fa-solid fa-file-lines"></i>
-                    Logs</button>
                 <button class="tab-btn" id="btn-broadcast" onclick="switchTab('broadcast')"><i
                         class="fa-solid fa-bullhorn"></i>
                     Thông báo</button>
+                <button class="tab-btn" id="btn-stuckjobs" onclick="switchTab('stuckjobs')"><i class="fa-solid fa-wrench"></i>
+                    Job Kẹt</button>
                 <button class="tab-btn" id="btn-settings" onclick="switchTab('settings')"><i
                         class="fa-solid fa-gear"></i> Cài đặt</button>
                 <button class="tab-btn" id="btn-ngrok" onclick="switchTab('ngrok')"><i
@@ -624,6 +629,13 @@ if (!isset($_SESSION['admin_authenticated']) || $_SESSION['admin_authenticated']
                     liệu</button>
             </nav>
         </div> <!-- End container for header and nav -->
+
+        <!-- TAB: STUCK JOBS -->
+        <div id="tab-stuckjobs" class="tab-content">
+            <div class="section" style="padding: 0; height: calc(100vh - 120px); min-height: 800px; overflow: hidden; border-radius: 12px; border: 1px solid var(--border);">
+                <iframe src="api/reset_job.php" style="width: 100%; height: 100%; border: none;"></iframe>
+            </div>
+        </div>
 
         <!-- TAB: DASHBOARD -->
         <div id="tab-dashboard" class="tab-content active">
