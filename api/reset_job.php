@@ -102,10 +102,18 @@ if (isset($_GET['check']) && !empty($_GET['check'])) {
     $jobId = trim($_GET['check']);
     try {
         $db = getDB();
-        $stmt = $db->prepare("SELECT j.*, u.email as user_email, LENGTH(j.full_text) as text_length FROM conversion_jobs j LEFT JOIN users u ON j.user_id = u.id WHERE j.id = ?");
+        $stmt = $db->prepare("SELECT j.*, u.email as user_email, w.worker_name, LENGTH(j.full_text) as text_length FROM conversion_jobs j LEFT JOIN users u ON j.user_id = u.id LEFT JOIN workers w ON j.worker_uuid = w.worker_uuid WHERE j.id = ?");
         $stmt->execute([$jobId]);
         $checkedJob = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$checkedJob) {
+        
+        $workerLogs = [];
+        if ($checkedJob) {
+            try {
+                $stmtLog = $db->prepare("SELECT created_at, worker_name, level, message FROM worker_logs WHERE job_id = ? ORDER BY created_at DESC LIMIT 50");
+                $stmtLog->execute([$jobId]);
+                $workerLogs = $stmtLog->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Exception $e) { }
+        } else {
             $msg = "❌ Job $jobId không tồn tại trong hệ thống.";
         }
     } catch (Exception $e) {
@@ -121,10 +129,11 @@ try {
     $stmt = $db->query("
         SELECT j.id, j.user_id, j.status, j.total_chunks, j.processed_chunks, 
                j.worker_uuid, j.model_id, j.voice_id, j.created_at, j.updated_at,
-               j.attempts, u.email as user_email,
+               j.attempts, u.email as user_email, w.worker_name,
                LENGTH(j.full_text) as text_length
         FROM conversion_jobs j
         LEFT JOIN users u ON j.user_id = u.id
+        LEFT JOIN workers w ON j.worker_uuid = w.worker_uuid
         WHERE (
             (j.status IS NULL OR j.status = '' OR j.status = '-' OR j.status = '—' OR j.status = '–')
             OR (j.status = 'processing' AND j.updated_at < NOW() - INTERVAL 10 MINUTE)
@@ -400,7 +409,7 @@ try {
                 <div><strong>Trạng thái:</strong> <span style="color: #fbbf24; font-weight: bold;"><?= htmlspecialchars($checkedJob['status'] ?: '(trống)') ?></span></div>
                 <div><strong>Ký tự:</strong> <?= number_format((int)$checkedJob['text_length']) ?></div>
                 <div><strong>Tiến độ:</strong> <?= (int)$checkedJob['processed_chunks'] ?>/<?= (int)$checkedJob['total_chunks'] ?> chunks</div>
-                <div><strong>Worker:</strong> <span style="color: #93c5fd;"><?= htmlspecialchars($checkedJob['worker_uuid'] ?: '—') ?></span></div>
+                <div><strong>Worker:</strong> <span style="color: #93c5fd;"><?= htmlspecialchars($checkedJob['worker_name'] ?: ($checkedJob['worker_uuid'] ?: '—')) ?></span></div>
                 <div><strong>Attempts:</strong> <?= (int)$checkedJob['attempts'] ?> lần thử</div>
                 <div><strong>Model:</strong> <?= htmlspecialchars($checkedJob['model_id']) ?></div>
                 <div><strong>Tạo lúc:</strong> <?= $checkedJob['created_at'] ?></div>
@@ -409,6 +418,25 @@ try {
                 </div>
                 <div style="grid-column: 1 / -1; max-height: 100px; overflow-y: auto; background: #022c22; padding: 8px; border-radius: 4px; font-size: 12px; color: #cbd5e1; white-space: pre-wrap;"><strong>Đoạn text cuối (Previous Chunk Text):</strong>
 <?= htmlspecialchars($checkedJob['previous_chunk_text'] ?: '—') ?></div>
+                <div style="grid-column: 1 / -1; max-height: 300px; overflow-y: auto; background: #022c22; padding: 8px; border-radius: 4px; font-size: 12px; color: #cbd5e1;">
+                    <strong style="display:block;margin-bottom:8px;color:#34d399;">📜 Worker Logs (50 dòng gần nhất):</strong>
+                    <?php if (empty($workerLogs)): ?>
+                        <div style="color: #64748b;">Không có log nào.</div>
+                    <?php else: ?>
+                        <?php foreach($workerLogs as $log): ?>
+                            <div style="margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">
+                                <span style="color: #94a3b8;">[<?= $log['created_at'] ?>]</span> 
+                                <span style="color: #60a5fa;"><?= htmlspecialchars($log['worker_name']) ?></span>
+                                <?php if ($log['level'] === 'error'): ?>
+                                    <span style="color: #f87171; font-weight: bold;">(ERROR)</span>
+                                <?php elseif ($log['level'] === 'warning'): ?>
+                                    <span style="color: #fbbf24; font-weight: bold;">(WARN)</span>
+                                <?php endif; ?>: 
+                                <span style="<?= $log['level'] === 'error' ? 'color:#f87171;' : ($log['level'] === 'warning' ? 'color:#fbbf24;' : '') ?>"><?= htmlspecialchars($log['message']) ?></span>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
             </div>
             <div style="margin-top: 16px; display: flex; gap: 10px;">
                 <a href="reset_job.php?reset=<?= urlencode($checkedJob['id']) ?>" class="btn btn-reset" onclick="return confirm('Reset job <?= $checkedJob['id'] ?>?')">🔁 Reset Job Này</a>
@@ -474,7 +502,7 @@ try {
                     <td><?= (int)$job['processed_chunks'] ?>/<?= (int)$job['total_chunks'] ?></td>
                     <td><?= number_format((int)$job['text_length']) ?></td>
                     <td><span class="model-tag"><?= htmlspecialchars($job['model_id'] ? str_replace(['eleven_', 'multilingual_'], ['', ''], $job['model_id']) : 'N/A') ?></span></td>
-                    <td><span class="worker-col"><?= htmlspecialchars($job['worker_uuid'] ?: '—') ?></span></td>
+                    <td><span class="worker-col"><?= htmlspecialchars($job['worker_name'] ?: ($job['worker_uuid'] ?: '—')) ?></span></td>
                     <td>
                         <div><?= $createdAt->format('d/m H:i:s') ?></div>
                         <div class="time-ago"><?= $createdAgo ?></div>
