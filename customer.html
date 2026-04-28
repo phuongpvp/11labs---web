@@ -3608,8 +3608,7 @@
                     planBadge.style.border = '1px solid #c5a017';
                     planBadge.style.fontWeight = 'bold';
                     planBadge.style.boxShadow = '0 0 10px rgba(212, 175, 55, 0.4)';
-                }
-        window.addEventListener('languageChanged', () => { updateDashboard(); }); else if (planValue === 'basic') {
+                } else if (planValue === 'basic') {
                     planBadge.style.background = '#3b82f6';
                     planBadge.style.color = 'white';
                     planBadge.style.border = 'none';
@@ -3633,13 +3632,14 @@
                 const total = userData.quota_total;
                 const percentage = total > 0 ? (remaining / total) * 100 : 0;
 
-                // Translate dynamic quota string
-                let quotaPrefix = I18n.t('customer.quota_left', 'Còn lại:');
-                let quotaSuffix = I18n.t('tool_shared.char_label', 'Ký tự').toLowerCase();
+                // Translate dynamic quota string (safe fallback if i18n not loaded)
+                const _t = (key, fallback) => (typeof I18n !== 'undefined' && I18n.t) ? I18n.t(key, fallback) : fallback;
+                let quotaPrefix = _t('customer.quota_left', 'Còn lại:');
+                let quotaSuffix = _t('tool_shared.char_label', 'Ký tự').toLowerCase();
                 let quotaLabel = `${quotaPrefix} ${formatNumber(remaining)} / ${formatNumber(total)} ${quotaSuffix}`;
                 if (userData.parent_id) {
-                    let teamQuotaPrefix = I18n.t('customer.quota_team', 'Điểm tổng:');
-                    let teamQuotaSuffix = I18n.t('customer.quota_team_desc', '(Gồm Cá nhân & Nhóm)');
+                    let teamQuotaPrefix = _t('customer.quota_team', 'Điểm tổng:');
+                    let teamQuotaSuffix = _t('customer.quota_team_desc', '(Gồm Cá nhân & Nhóm)');
                     quotaLabel = `${teamQuotaPrefix} ${formatNumber(remaining)} / ${formatNumber(total)} ${teamQuotaSuffix}`;
                 }
 
@@ -3680,6 +3680,8 @@
                     }
                 }
             }
+
+            window.addEventListener('languageChanged', () => { updateDashboard(); });
 
             async function refreshData() {
                 const btn = document.getElementById('btnRefresh');
@@ -5658,10 +5660,8 @@
                 document.getElementById('planSelection').style.display = 'block';
                 document.getElementById('qrPayment').style.display = 'none';
 
-                // Initial render or refresh
-                if (appPackages.length > 0) {
-                    renderPackages(appPackages);
-                }
+                // TẠM KHÓA: Hiện thông báo bảo trì thay vì danh sách gói
+                document.getElementById('pricingGrid').innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted); grid-column: 1 / -1;"><i class="fa-solid fa-triangle-exclamation" style="font-size:3rem; color:#ef4444; margin-bottom:15px; display:block;"></i><h3 style="color:white; margin-bottom:10px;">Tạm Ngừng Nâng Cấp</h3><p>Hệ thống hiện đang tạm khóa tính năng Nạp Tiền / Gia Hạn.<br>Xin quý khách vui lòng sử dụng nốt số điểm còn lại!</p></div>';
             }
 
             async function loadPackages() {

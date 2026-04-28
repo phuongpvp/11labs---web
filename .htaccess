@@ -4,9 +4,13 @@
 # Thay 123.456.789.000 bằng IP thật của máy bạn (nếu muốn vào được web).
 # ==============================================================
 # RewriteEngine On
-# RewriteCond %{REMOTE_ADDR} !^123\.456\.789\.000$
+# RewriteCond %{HTTP:CF-Connecting-IP} !14\.226\.24\.242
+# RewriteCond %{HTTP:X-Forwarded-For} !14\.226\.24\.242
+# RewriteCond %{REMOTE_ADDR} !14\.226\.24\.242
 # RewriteCond %{REQUEST_URI} !^/maintenance\.html$
+# RewriteCond %{REQUEST_URI} !^/api/ [NC]
 # RewriteRule ^(.*)$ /maintenance.html [R=302,L]
+
 
 # Clean URLs - Bỏ đuôi .html
 RewriteEngine On

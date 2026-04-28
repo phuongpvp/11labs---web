@@ -78,6 +78,25 @@ try {
             $credits = $elData['credits'];
             $resetAt = $elData['reset_at'];
 
+            // Test voice generation
+            $testResult = testElevenLabsVoice($token);
+            if ($testResult === 'blocked') {
+                $results['failed']++;
+                $results['details'][] = [
+                    'key' => substr($keyEncrypted, 0, 30) . '...',
+                    'full_key' => $keyEncrypted,
+                    'status' => 'failed',
+                    'error' => 'API Key này đã bị ElevenLabs Blocked vĩnh viễn (unusual activity).'
+                ];
+                continue;
+            } elseif ($testResult === 'ok') {
+                $testStatus = 'tested';
+            } else {
+                // Log warning but don't fail immediately if it's just a worker error
+                $testStatus = 'skipped';
+                logToFile('error_' . date('Y-m-d') . '.log', "Test voice failed for key: " . $testResult);
+            }
+
             // Insert into database
             $stmt = $db->prepare("INSERT INTO api_keys (key_encrypted, credits_remaining, fb_token, fb_token_expires, fb_refresh_token, status, last_checked, reset_at) VALUES (?, ?, ?, ?, ?, 'active', NOW(), ?)");
             $stmt->execute([
@@ -92,8 +111,10 @@ try {
             $results['success']++;
             $results['details'][] = [
                 'key' => substr($keyEncrypted, 0, 30) . '...',
+                'full_key' => $keyEncrypted,
                 'status' => 'success',
-                'credits' => $credits
+                'credits' => $credits,
+                'test_status' => $testStatus
             ];
 
         } catch (Exception $e) {

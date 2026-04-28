@@ -2957,75 +2957,117 @@ email2@example.com:password2"></textarea>
             successEl.innerText = '';
             errorEl.innerText = '';
 
-            if (!keysText.trim()) {
+            const keys = keysText.split('\n').map(k => k.trim()).filter(k => k);
+            if (keys.length === 0) {
                 errorEl.innerText = 'Vui lòng nhập ít nhất 1 key';
                 return;
             }
 
             progressEl.style.display = 'block';
-            statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+            let successCount = 0;
+            let failedCount = 0;
+            const total = keys.length;
+            const detailsHtmlArray = [];
+            const failedKeysArray = [];
 
-            try {
-                const res = await fetch(`${API_BASE}/admin/bulk_add_keys.php`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        admin_password: adminPassword,
-                        keys_text: keysText
-                    })
-                });
+            for (let i = 0; i < keys.length; i++) {
+                const key = keys[i];
+                const updateLiveFeed = () => {
+                    const currentStatus = `<div style="margin-bottom: 10px; display: flex; justify-content: space-between;">
+                        <span><i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý ${i + 1}/${total}...</span>
+                        <span style="color: var(--success);">✅ ${successCount}</span>
+                        <span style="color: var(--error);">❌ ${failedCount}</span>
+                    </div>`;
+                    const listFeed = detailsHtmlArray.length > 0 ? 
+                        `<div style="max-height: 250px; overflow-y: auto; background: #000; padding: 10px; border-radius: 8px; display: flex; flex-direction: column-reverse;">${detailsHtmlArray.join('')}</div>` : '';
+                    statusEl.innerHTML = currentStatus + listFeed;
+                };
 
-                const data = await res.json();
-
-                if (res.ok && data.status === 'success') {
-                    const results = data.results;
-
-                    let failedKeysText = '';
-                    if (results.details) {
-                        failedKeysText = results.details
-                            .filter(d => d.status === 'failed')
-                            .map(d => d.full_key)
-                            .join('\n');
-                    }
-
-                    statusEl.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <div>
-                                <div style="color: var(--success); font-weight: 600;">✅ Thành công: ${results.success}/${results.total}</div>
-                                <div style="color: var(--error); font-weight: 600;">❌ Thất bại: ${results.failed}/${results.total}</div>
-                            </div>
-                            ${results.failed > 0 ? `
-                                <button class="btn btn-primary" style="width: auto; padding: 5px 12px; font-size: 0.8rem;" onclick="copyFailedKeys(\`${failedKeysText.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">
-                                    <i class="fa-solid fa-copy"></i> Copy các Key lỗi
-                                </button>
-                            ` : ''}
-                        </div>
-                    `;
-
-                    if (results.details && results.details.length > 0) {
-                        const detailsHtml = results.details.map(d => `
-                            <div style="font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;">
-                                <code style="color: var(--text-muted);">${d.key}</code>
-                                ${d.status === 'success' ?
-                                `<span style="color: var(--success);">✅ ${d.credits} credits</span>` :
-                                `<span style="color: var(--error);">❌ ${d.error}</span>`
+                try {
+                    const res = await fetch(`${API_BASE}/admin/bulk_add_keys.php`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ admin_password: adminPassword, keys_text: key })
+                    });
+                    const data = await res.json();
+                    
+                    if (res.ok && data.status === 'success' && data.results && data.results.details && data.results.details.length > 0) {
+                        const d = data.results.details[0];
+                        if (d.status === 'success') {
+                            successCount++;
+                            let testBadge = '';
+                            if (d.test_status === 'tested') {
+                                testBadge = '<span style="color: #60a5fa; font-size: 0.75rem; margin-left: 5px;">(Đã test voice)</span>';
+                            } else if (d.test_status === 'skipped') {
+                                testBadge = '<span style="color: #f59e0b; font-size: 0.75rem; margin-left: 5px;" title="Không có máy chủ Online để test">(Bỏ qua test)</span>';
                             }
+                            detailsHtmlArray.push(`
+                                <div style="font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;">
+                                    <code style="color: var(--text-muted);">${d.key}</code>
+                                    <div>
+                                        <span style="color: var(--success);">✅ ${d.credits?.toLocaleString() || 0} credits</span>
+                                        ${testBadge}
+                                    </div>
+                                </div>
+                            `);
+                        } else {
+                            failedCount++;
+                            failedKeysArray.push(d.full_key);
+                            detailsHtmlArray.push(`
+                                <div style="font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; gap: 8px;">
+                                    <code style="color: var(--text-muted); flex: 1;">${d.key}</code>
+                                    <span style="color: var(--error); text-align: right; font-size: 0.8rem; flex: 1;">❌ ${d.error}</span>
+                                </div>
+                            `);
+                        }
+                    } else {
+                        failedCount++;
+                        failedKeysArray.push(key);
+                        detailsHtmlArray.push(`
+                            <div style="font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid var(--border); color: var(--error);">
+                                <code style="color: var(--text-muted);">${key.substring(0, 30)}...</code> — Lỗi máy chủ
                             </div>
-                        `).join('');
-                        statusEl.innerHTML += `<div style="margin-top: 10px; max-height: 250px; overflow-y: auto; background: #000; padding: 10px; border-radius: 8px;">${detailsHtml}</div>`;
+                        `);
                     }
-
-                    if (results.success > 0) {
-                        document.getElementById('bulkKeysText').value = '';
-                        setTimeout(() => { loadStats(); }, 2000);
-                    }
-                } else {
-                    errorEl.innerText = data.error || 'Import thất bại';
-                    progressEl.style.display = 'none';
+                } catch (e) {
+                    failedCount++;
+                    failedKeysArray.push(key);
+                    detailsHtmlArray.push(`
+                        <div style="font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid var(--border); color: var(--error);">
+                            <code style="color: var(--text-muted);">${key.substring(0, 30)}...</code> — Lỗi kết nối
+                        </div>
+                    `);
                 }
-            } catch (error) {
-                errorEl.innerText = 'Lỗi kết nối';
-                progressEl.style.display = 'none';
+
+                updateLiveFeed();
+
+                if (i < keys.length - 1) {
+                    // Delay 1 second between keys to protect Colab IPs from rate limiting
+                    await new Promise(r => setTimeout(r, 1000));
+                }
+            }
+
+            // Display final results
+            const failedKeysText = failedKeysArray.join('\n');
+            statusEl.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div>
+                        <div style="color: var(--success); font-weight: 600;">✅ Thành công: ${successCount}/${total}</div>
+                        <div style="color: var(--error); font-weight: 600;">❌ Thất bại: ${failedCount}/${total}</div>
+                    </div>
+                    ${failedCount > 0 ? `
+                        <button class="btn btn-primary" style="width: auto; padding: 5px 12px; font-size: 0.8rem;" onclick="copyFailedKeys(\`${failedKeysText.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">
+                            <i class="fa-solid fa-copy"></i> Copy các Key lỗi
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+            if (detailsHtmlArray.length > 0) {
+                statusEl.innerHTML += `<div style="max-height: 250px; overflow-y: auto; background: #000; padding: 10px; border-radius: 8px; display: flex; flex-direction: column-reverse;">${detailsHtmlArray.join('')}</div>`;
+            }
+            if (successCount > 0) {
+                document.getElementById('bulkKeysText').value = '';
+                setTimeout(() => { loadStats(); }, 2000);
             }
         }
 
@@ -3121,11 +3163,16 @@ email2@example.com:password2"></textarea>
                 };
 
                 // Update button with live counter
-                const updateBtn = () => {
+                const updateBtnAndList = () => {
                     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${successCount + failedCount}/${total} — <span style="color:#4ade80">✅${successCount}</span> <span style="color:#f87171">❌${failedCount}</span>`;
+                    
+                    let feedHtml = `<div style="color: var(--text-muted); padding: 10px; padding-bottom: 0;">Đang xử lý ${successCount + failedCount}/${total}...</div>`;
+                    if (detailsHtml) {
+                        feedHtml += `<div style="margin-top: 10px; max-height: 250px; overflow-y: auto; background: #000; padding: 10px; border-radius: 8px; display: flex; flex-direction: column-reverse;">${detailsHtml}</div>`;
+                    }
+                    listDiv.innerHTML = feedHtml;
                 };
-                updateBtn();
-                listDiv.innerHTML = `<div style="color: var(--text-muted); padding: 10px;">Đang thêm ${total} key vào hệ thống...</div>`;
+                updateBtnAndList();
                 saveProgress();
 
                 // 2. Add keys ONE BY ONE with live counter
@@ -3143,9 +3190,18 @@ email2@example.com:password2"></textarea>
                             const d = addData.results.details[0];
                             if (d.status === 'success') {
                                 successCount++;
+                                let testBadge = '';
+                                if (d.test_status === 'tested') {
+                                    testBadge = '<span style="color: #60a5fa; font-size: 0.75rem; margin-left: 5px;">(Đã test voice)</span>';
+                                } else if (d.test_status === 'skipped') {
+                                    testBadge = '<span style="color: #f59e0b; font-size: 0.75rem; margin-left: 5px;" title="Không có máy chủ Online để test">(Bỏ qua test)</span>';
+                                }
                                 detailsHtml += `<div style="font-size: 0.82rem; padding: 5px 8px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center;">
                                     <code style="color: #888;">${d.key}</code>
-                                    <span style="color: #22c55e;">✅ ${d.credits?.toLocaleString()} credits</span>
+                                    <div>
+                                        <span style="color: #22c55e;">✅ ${d.credits?.toLocaleString() || 0} credits</span>
+                                        ${testBadge}
+                                    </div>
                                 </div>`;
                             } else {
                                 failedCount++;
@@ -3172,8 +3228,14 @@ email2@example.com:password2"></textarea>
                             <code style="color: #888;">${keyText.substring(0, 30)}...</code> — Lỗi kết nối
                         </div>`;
                     }
-                    updateBtn();
+                    
+                    updateBtnAndList();
                     saveProgress();
+
+                    if (i < keysToAdd.length - 1) {
+                        // Delay 1 second between keys to protect Colab IPs from rate limiting
+                        await new Promise(r => setTimeout(r, 1000));
+                    }
                 }
 
                 // 3. Show final results

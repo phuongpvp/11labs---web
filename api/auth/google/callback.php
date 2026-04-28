@@ -87,6 +87,9 @@ try {
     $user = $stmt->fetch();
 
     if (!$user) {
+        // TẠM KHÓA TẠO TÀI KHOẢN MỚI
+        die("<script>alert('Hệ thống hiện đang tạm khóa đăng ký tài khoản mới để bảo trì. Mong bạn thông cảm!'); window.location.href = '../../../login.html';</script>");
+        
         // Auto-Register new user
         $password = bin2hex(random_bytes(8));
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);

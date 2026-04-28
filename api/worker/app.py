@@ -74,7 +74,7 @@ def decrypt_key(text):
         return d[:-d[-1]].decode('utf-8')
     except: return text
 
-def login_with_firebase(email, password):
+def login_with_firebase(email, password, return_full=False):
     url = f'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}'
     h = {
         'Content-Type': 'application/json',
@@ -84,7 +84,11 @@ def login_with_firebase(email, password):
     }
     try:
         res = requests.post(url, json={'email': email, 'password': password, 'returnSecureToken': True}, headers=h, timeout=15, verify=False)
-        if res.ok: return res.json().get('idToken')
+        if res.ok:
+            data = res.json()
+            if return_full:
+                return data
+            return data.get('idToken')
         print(f"⚠️ Firebase login error for {email}: {res.status_code} {res.text[:200]}")
     except Exception as e:
         print(f"⚠️ Firebase login exception for {email}: {e}")
@@ -1411,13 +1415,20 @@ def firebase_login_endpoint():
         logger.info(f"Firebase login request for: {email}")
 
         # Perform Firebase login using this worker's IP
-        token = login_with_firebase(email, password)
+        token_data = login_with_firebase(email, password, return_full=True)
 
-        if token:
+        if token_data and isinstance(token_data, dict):
             logger.info(f"✅ Firebase login successful for: {email}")
             return jsonify({
                 'success': True,
-                'idToken': token,
+                'idToken': token_data.get('idToken'),
+                'refreshToken': token_data.get('refreshToken'),
+                'worker_uuid': WORKER_UUID
+            })
+        elif token_data:
+            return jsonify({
+                'success': True,
+                'idToken': token_data,
                 'worker_uuid': WORKER_UUID
             })
         else:
@@ -1645,6 +1656,52 @@ def conversation_endpoint():
         logger.error(f"💥 Critical error in /api/conversation: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+# ================= TEST KEY (1 CHAR) =================
+@app.route('/api/test_key', methods=['POST'])
+def test_key_endpoint():
+    try:
+        data = request.json or {}
+        if data.get('secret') != UPDATE_SECRET:
+            return jsonify({'error': 'Unauthorized'}), 401
+            
+        api_key = data.get('api_key')
+        if not api_key:
+            return jsonify({'error': 'Missing api_key'}), 400
+
+        # Try to generate 1 character using Rachel's default voice ID
+        url = "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM"
+        headers = {"Content-Type": "application/json", "Accept": "*/*"}
+        if api_key.startswith("ey") or len(api_key) > 100:
+            headers["Authorization"] = f"Bearer {api_key}"
+        else:
+            headers["xi-api-key"] = api_key
+
+        payload = {
+            "text": "a", 
+            "model_id": "eleven_multilingual_v2",
+            "voice_settings": {"stability": 0.5, "similarity_boost": 0.75}
+        }
+
+        res = requests.post(url, json=payload, headers=headers, timeout=10, verify=False)
+        
+        if res.status_code == 200:
+            return jsonify({'status': 'ok'})
+            
+        # If 401 or any error containing 'detected_unusual_activity'
+        try:
+            err_data = res.json()
+            err_msg = str(err_data)
+        except:
+            err_msg = res.text
+
+        if res.status_code == 401 or "detected_unusual_activity" in err_msg.lower():
+            return jsonify({'status': 'blocked', 'error': err_msg}), 401
+            
+        return jsonify({'status': 'error', 'error': f"HTTP {res.status_code}: {err_msg}"}), res.status_code
+
+    except Exception as e:
+        return jsonify({'status': 'error', 'error': str(e)}), 500
+
 # ===== SHUTDOWN: Kill ngrok sạch trước khi Colab disconnect =====
 @app.route('/api/shutdown_ngrok', methods=['POST'])
 def shutdown_ngrok():
@@ -1728,14 +1785,47 @@ def start_cloudflared_tunnel(port=5000, max_retries=5):
 
     return None
 
+# ================= Ngrok Tunnel (Fallback) =================
+def start_ngrok_tunnel(port=5000, token=None):
+    if not token:
+        logger.error("❌ Không có Ngrok token, không thể tạo tunnel Ngrok.")
+        return None
+    try:
+        import sys
+        try:
+            import pyngrok
+        except ImportError:
+            logger.info("⏳ Đang cài đặt thư viện pyngrok...")
+            subprocess.run([sys.executable, "-m", "pip", "install", "pyngrok", "--quiet"], check=True)
+            
+        from pyngrok import ngrok, conf
+        
+        # Kill any existing ngrok process
+        os.system("killall -9 ngrok 2>/dev/null")
+        time.sleep(1)
+        
+        logger.info(f"⏳ Đang tạo Ngrok Tunnel với token: {token[:4]}***")
+        conf.get_default().auth_token = token
+        conf.get_default().region = "ap"
+        
+        public_url = ngrok.connect(port).public_url
+        logger.info(f"✅ Ngrok Tunnel thành công: {public_url}")
+        return public_url
+    except Exception as e:
+        logger.error(f"❌ Lỗi tạo Ngrok tunnel: {e}")
+        return None
+
+NGROK_TOKEN = None
+
 # Lấy worker name từ server (nếu có target_name)
-def fetch_worker_name():
+def fetch_worker_name_and_token():
     global WORKER_NAME
+    global NGROK_TOKEN
     target_name = os.environ.get('WORKER_TARGET_NAME', '')
     if target_name:
         WORKER_NAME = target_name
     try:
-        # Vẫn gọi get_ngrok_token.php để lấy worker_name (nhưng không cần token)
+        # Vẫn gọi get_ngrok_token.php để lấy worker_name và token
         res = requests.post(
             f"{PHP_BACKEND_URL}/api/get_ngrok_token.php",
             json={'worker_uuid': WORKER_UUID, 'secret': UPDATE_SECRET, 'target_name': target_name},
@@ -1744,15 +1834,35 @@ def fetch_worker_name():
         data = res.json()
         if data.get('worker_name'):
             WORKER_NAME = data['worker_name']
+        if data.get('token'):
+            NGROK_TOKEN = data['token']
     except:
         pass
 
-fetch_worker_name()
-public_url = start_cloudflared_tunnel(5000)
+fetch_worker_name_and_token()
+
+tunnel_type = os.environ.get('TUNNEL_TYPE', 'cloudflare').lower()
+public_url = None
+
+if tunnel_type == 'ngrok':
+    if NGROK_TOKEN:
+        public_url = start_ngrok_tunnel(5000, NGROK_TOKEN)
+    else:
+        logger.warning("⚠️ Muốn chạy ngrok nhưng không có token từ server. Thử dùng Cloudflare...")
+        
+    if not public_url:
+        public_url = start_cloudflared_tunnel(5000)
+else:
+    public_url = start_cloudflared_tunnel(5000)
+    if not public_url:
+        logger.warning("⚠️ Cloudflare thất bại, thử chuyển sang Ngrok...")
+        if NGROK_TOKEN:
+            public_url = start_ngrok_tunnel(5000, NGROK_TOKEN)
 
 if not public_url:
-    print("❌ Không tạo được Cloudflare Tunnel sau nhiều lần thử. Vui lòng chạy lại.")
-    import sys; sys.exit(1)
+    import sys
+    print("❌ Không tạo được Tunnel (cả Cloudflare và Ngrok). Vui lòng chạy lại.")
+    sys.exit(1)
 
 print(f"🚀 SERVER URL: {public_url}")
 print(f"🆔 WORKER ID: {WORKER_UUID}")

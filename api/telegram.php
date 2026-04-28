@@ -308,6 +308,254 @@ function checkOfflineWorkers()
     return 0;
 }
 
+/**
+ * Retry failed worker restarts
+ * Scans for run_all commands that were sent but worker still hasn't come back online.
+ * Retries up to 2 more times. After all retries exhausted, sends critical Telegram alert.
+ */
+function retryFailedRestarts()
+{
+    try {
+        $db = getDB();
+
+        // Ensure retry_count column exists on colab_commands
+        try {
+            $db->exec("ALTER TABLE colab_commands ADD COLUMN retry_count INT DEFAULT 0 AFTER scheduled_at");
+        } catch (Exception $e) { /* Already exists */ }
+
+        // Find run_all commands that:
+        // 1. Were AUTO-triggered (result_message starts with 'AUTO:')
+        // 2. Have been completed/failed/executing for at least 8 minutes (enough time for Colab to boot)
+        // 3. retry_count < 2 (max 2 additional retries)
+        // 4. Were created in last 1 hour (don't retry ancient commands)
+        $stmt = $db->query("
+            SELECT cc.id, cc.worker_name, cc.status, cc.retry_count, cc.created_at, cc.executed_at
+            FROM colab_commands cc
+            WHERE cc.command = 'run_all'
+              AND cc.result_message LIKE 'AUTO:%'
+              AND cc.status IN ('completed', 'failed', 'executing')
+              AND cc.retry_count < 2
+              AND cc.created_at > (NOW() - INTERVAL 1 HOUR)
+              AND (
+                  (cc.executed_at IS NOT NULL AND cc.executed_at < (NOW() - INTERVAL 8 MINUTE))
+                  OR (cc.status = 'executing' AND cc.created_at < (NOW() - INTERVAL 10 MINUTE))
+                  OR (cc.status = 'completed' AND cc.executed_at < (NOW() - INTERVAL 8 MINUTE))
+              )
+            ORDER BY cc.created_at DESC
+        ");
+        $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($candidates)) return 0;
+
+        $retriedCount = 0;
+
+        foreach ($candidates as $cmd) {
+            $workerName = $cmd['worker_name'];
+            $currentRetry = (int)$cmd['retry_count'];
+
+            // Check if worker has come back online (worker process heartbeat)
+            // Normalize name: Sv12 → check for Sever12, Server12, Sv12 in workers table
+            $num = preg_replace('/^(?:Sever|Server|Sv)/i', '', $workerName);
+            $nameVariants = ["Sv$num", "Sever$num", "Server$num", $workerName];
+            $nameVariants = array_unique($nameVariants);
+            $placeholders = implode(',', array_fill(0, count($nameVariants), '?'));
+
+            // Check workers table: is the actual Python worker online?
+            $stmtWorker = $db->prepare("
+                SELECT COUNT(*) FROM workers 
+                WHERE worker_name IN ($placeholders)
+                  AND last_seen > (NOW() - INTERVAL 120 SECOND)
+                  AND status = 'active'
+            ");
+            $stmtWorker->execute($nameVariants);
+            $workerOnline = (int)$stmtWorker->fetchColumn() > 0;
+
+            if ($workerOnline) {
+                // Worker is back! Mark command as done, no retry needed
+                $db->prepare("UPDATE colab_commands SET retry_count = 99 WHERE id = ?")->execute([$cmd['id']]);
+                logToFile('auto_restart.log', "RETRY CHECK: $workerName is back online. No retry needed.");
+                continue;
+            }
+
+            // Check if extension is still online (heartbeat in colab_extensions)
+            $stmtExt = $db->prepare("
+                SELECT COUNT(*) FROM colab_extensions 
+                WHERE worker_name = ? 
+                  AND last_seen > (NOW() - INTERVAL 30 SECOND)
+            ");
+            $stmtExt->execute([$workerName]);
+            $extOnline = (int)$stmtExt->fetchColumn() > 0;
+
+            // Prevent duplicate: check if there's already a pending run_all for this worker
+            $stmtDup = $db->prepare("
+                SELECT COUNT(*) FROM colab_commands 
+                WHERE worker_name = ? 
+                  AND command = 'run_all' 
+                  AND status = 'pending' 
+                  AND created_at > (NOW() - INTERVAL 10 MINUTE)
+            ");
+            $stmtDup->execute([$workerName]);
+            if ((int)$stmtDup->fetchColumn() > 0) {
+                continue; // Already has a pending run_all
+            }
+
+            $nextRetry = $currentRetry + 1;
+
+            // Mark old command so we don't process it again
+            $db->prepare("UPDATE colab_commands SET retry_count = 99 WHERE id = ?")->execute([$cmd['id']]);
+
+            if (!$extOnline) {
+                // Extension is offline too — can't send run_all, it won't be received
+                $msg = "🚨 <b>CẢNH BÁO: MÁY CHỦ KHÔNG THỂ TỰ KHỞI ĐỘNG LẠI</b>\n\n";
+                $msg .= "🏷️ <b>Máy chủ:</b> <b>{$workerName}</b>\n";
+                $msg .= "❌ <b>Tình trạng:</b> Extension cũng offline, không thể gửi lệnh Run All\n";
+                $msg .= "🔄 <b>Đã thử:</b> {$currentRetry} lần retry\n\n";
+                $msg .= "⚠️ <i>Anh cần remote vào VPS để kiểm tra và bật lại máy chủ này!</i>";
+
+                sendTelegramMessage2($msg);
+                logToFile('auto_restart.log', "RETRY EXHAUSTED (EXT OFFLINE): $workerName — Extension offline, cannot retry. Alert sent.");
+                continue;
+            }
+
+            // Extension is online but worker hasn't come back — retry run_all
+            $db->prepare("INSERT INTO colab_commands (worker_name, command, result_message, retry_count) VALUES (?, 'run_all', ?, ?)")
+                ->execute([$workerName, "AUTO: Retry lần $nextRetry/2 (worker chưa online lại)", $nextRetry]);
+
+            $retriedCount++;
+            logToFile('auto_restart.log', "RETRY $nextRetry/2: Sent run_all for $workerName (worker still offline after 8 min)");
+
+            // Only log, no Telegram spam. Telegram only when all retries exhausted.
+        }
+
+        return $retriedCount;
+
+    } catch (Exception $e) {
+        logToFile('auto_restart.log', "retryFailedRestarts ERROR: " . $e->getMessage());
+        return 0;
+    }
+}
+
+/**
+ * Detect Stale Workers: Extension online but Worker offline
+ * Directly scans for workers where the Chrome extension is heartbeating
+ * but the Python worker process has been offline for > 10 minutes.
+ * Sends run_all command, max 2 attempts per worker per hour.
+ * This catches cases where the original auto-restart expired or was never created.
+ */
+function detectStaleWorkers()
+{
+    try {
+        $db = getDB();
+
+        // Find extensions that are online (heartbeat < 30s ago)
+        // but whose worker is offline (last_seen > 10 min ago OR status = 'offline')
+        $stmt = $db->query("
+            SELECT ce.worker_name, ce.last_seen as ext_last_seen
+            FROM colab_extensions ce
+            WHERE ce.last_seen > (NOW() - INTERVAL 30 SECOND)
+        ");
+        $onlineExtensions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($onlineExtensions)) return 0;
+
+        $fixedCount = 0;
+
+        foreach ($onlineExtensions as $ext) {
+            $workerName = $ext['worker_name'];
+
+            // Normalize name to check workers table (Sv12 → Sever12, Server12)
+            $num = preg_replace('/^(?:Sever|Server|Sv)/i', '', $workerName);
+            $nameVariants = ["Sv$num", "Sever$num", "Server$num", $workerName];
+            $nameVariants = array_unique($nameVariants);
+            $placeholders = implode(',', array_fill(0, count($nameVariants), '?'));
+
+            // Check if worker process is actually online
+            $stmtW = $db->prepare("
+                SELECT COUNT(*) FROM workers 
+                WHERE worker_name IN ($placeholders)
+                  AND last_seen > (NOW() - INTERVAL 300 SECOND)
+                  AND status = 'active'
+            ");
+            $stmtW->execute($nameVariants);
+            if ((int)$stmtW->fetchColumn() > 0) {
+                continue; // Worker is online, no problem
+            }
+
+            // Worker is offline! Check if there's already a pending/recent run_all
+            $stmtPending = $db->prepare("
+                SELECT COUNT(*) FROM colab_commands 
+                WHERE worker_name = ? 
+                  AND command = 'run_all' 
+                  AND (
+                      status = 'pending'
+                      OR (status IN ('completed', 'executing') AND created_at > (NOW() - INTERVAL 8 MINUTE))
+                  )
+            ");
+            $stmtPending->execute([$workerName]);
+            if ((int)$stmtPending->fetchColumn() > 0) {
+                continue; // Already has a recent/pending run_all
+            }
+
+            // Rate limit: max 2 run_all per worker per hour from this function
+            $stmtRate = $db->prepare("
+                SELECT COUNT(*) FROM colab_commands 
+                WHERE worker_name = ? 
+                  AND command = 'run_all' 
+                  AND result_message LIKE 'AUTO-DETECT:%'
+                  AND created_at > (NOW() - INTERVAL 1 HOUR)
+            ");
+            $stmtRate->execute([$workerName]);
+            $recentAttempts = (int)$stmtRate->fetchColumn();
+
+            if ($recentAttempts >= 2) {
+                // Already tried 2 times this hour — alert admin
+                // But only alert once (check if we already alerted)
+                $stmtAlerted = $db->prepare("
+                    SELECT COUNT(*) FROM colab_commands 
+                    WHERE worker_name = ? 
+                      AND command = 'run_all' 
+                      AND result_message LIKE 'AUTO-DETECT: EXHAUSTED%'
+                      AND created_at > (NOW() - INTERVAL 1 HOUR)
+                ");
+                $stmtAlerted->execute([$workerName]);
+                if ((int)$stmtAlerted->fetchColumn() === 0) {
+                    // Send final alert
+                    $msg = "🚨 <b>CẢNH BÁO: MÁY CHỦ KHÔNG THỂ TỰ KHỞI ĐỘNG LẠI</b>\n\n";
+                    $msg .= "🏷️ <b>Máy chủ:</b> <b>{$workerName}</b>\n";
+                    $msg .= "📡 <b>Extension:</b> ✅ Online\n";
+                    $msg .= "🖥️ <b>Worker:</b> ❌ Offline\n";
+                    $msg .= "🔄 <b>Đã thử Run All:</b> {$recentAttempts} lần trong 1 giờ qua\n\n";
+                    $msg .= "⚠️ <i>Anh cần remote vào VPS để kiểm tra và bật lại máy chủ này!</i>";
+                    sendTelegramMessage2($msg);
+
+                    // Mark as exhausted so we don't alert again
+                    $db->prepare("INSERT INTO colab_commands (worker_name, command, result_message, status) VALUES (?, 'run_all', 'AUTO-DETECT: EXHAUSTED — đã báo admin', 'failed')")
+                        ->execute([$workerName]);
+
+                    logToFile('auto_restart.log', "DETECT EXHAUSTED: $workerName — 2 run_all attempts failed. Alert sent to admin.");
+                }
+                continue;
+            }
+
+            // Send run_all!
+            $attemptNum = $recentAttempts + 1;
+            $db->prepare("INSERT INTO colab_commands (worker_name, command, result_message) VALUES (?, 'run_all', ?)")
+                ->execute([$workerName, "AUTO-DETECT: Lần $attemptNum/2 — Extension OK nhưng Worker offline"]);
+
+            $fixedCount++;
+            logToFile('auto_restart.log', "DETECT & FIX $attemptNum/2: $workerName — Extension online, Worker offline. Sent run_all.");
+
+            // Only log, no Telegram spam. Telegram only when all retries exhausted.
+        }
+
+        return $fixedCount;
+
+    } catch (Exception $e) {
+        logToFile('auto_restart.log', "detectStaleWorkers ERROR: " . $e->getMessage());
+        return 0;
+    }
+}
+
 function notifyWorkerBlocked($uuid, $ip, $url, $reason, $workerName = '')
 {
     $isIpBlock = strpos($reason, 'detected_unusual_activity') !== false;

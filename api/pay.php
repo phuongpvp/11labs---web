@@ -4,6 +4,9 @@ require_once __DIR__ . '/config.php';
 $input = json_decode(file_get_contents('php://input'), true);
 $method = $_SERVER['REQUEST_METHOD'];
 
+// TẠM KHÓA NẠP TIỀN / GIA HẠN
+jsonResponse(['error' => 'Hệ thống đang tạm khóa tính năng Nạp Tiền / Gia Hạn. Xin quý khách vui lòng sử dụng nốt số điểm còn lại!'], 503);
+
 if ($method === 'POST') {
     $token = $input['token'] ?? '';
     $planId = $input['plan_id'] ?? '';

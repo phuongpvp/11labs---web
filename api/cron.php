@@ -80,8 +80,12 @@ try {
         echo "Đã dọn dẹp DB (jobs/logs cũ hơn 48h).\n";
 
     // --- 1. Worker Monitor (Self-healing) ---
-    if ($debug)
-        echo "\n--- WORKER MONITOR ---\n";
+    // TEMPORARY TOGGLE: Disable auto-restart so admin can manually test workers
+    $disableAutoRestart = false; 
+
+    if (!$disableAutoRestart) {
+        if ($debug)
+            echo "\n--- WORKER MONITOR ---\n";
     $offlineCount = checkOfflineWorkers();
     if ($debug) {
         if ($offlineCount > 0) {
@@ -89,6 +93,33 @@ try {
         } else {
             echo "Tất cả máy vẫn đang Online tốt.\n";
         }
+    }
+
+    // --- 1.2. Retry Failed Restarts (Auto-restart didn't bring worker back) ---
+    if ($debug)
+        echo "\n--- RETRY FAILED RESTARTS ---\n";
+    $retryCount = retryFailedRestarts();
+    if ($debug) {
+        if ($retryCount > 0) {
+            echo "Đã gửi lại lệnh Run All cho $retryCount máy chủ chưa khởi động lại.\n";
+        } else {
+            echo "Không có máy chủ nào cần retry.\n";
+        }
+    }
+
+        // --- 1.3. Detect Stale Workers (Extension OK but Worker offline) ---
+        if ($debug)
+            echo "\n--- DETECT STALE WORKERS ---\n";
+        $staleCount = detectStaleWorkers();
+        if ($debug) {
+            if ($staleCount > 0) {
+                echo "Phát hiện $staleCount máy chủ có Extension online nhưng Worker offline. Đã gửi Run All.\n";
+            } else {
+                echo "Không có máy chủ nào bị stale.\n";
+            }
+        }
+    } else {
+        if ($debug) echo "\n--- AUTO-RESTART IS TEMPORARILY DISABLED ---\n";
     }
 
     // --- 1.5. Ngrok Token Auto-Cleanup (5 minutes rule) ---
